@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+.venv-depth/
+.cache/
+outputs/
+data/
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.task
