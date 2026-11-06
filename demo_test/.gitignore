@@ -11,3 +11,4 @@ data/
 *.pth
 *.onnx
 *.task
+.venv-preprocess/

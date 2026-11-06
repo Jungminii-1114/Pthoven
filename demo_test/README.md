@@ -129,3 +129,7 @@ node scripts/evaluate_depth.mjs data/person1.json data/person2.json > outputs/ev
 - 손등 특징: [OpenCV Optical Flow](https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html)의 Farneback 구현을 사용한다.
 
 학습 데이터·촬영 영상·모델 캐시·추론 결과는 커밋 대상에서 제외한다. 상세 방법과 아직 확인하지 못한 범위는 각 description에 분리해 적었다.
+
+## 악보 데이터 전처리
+
+Mutopia와 nASAP를 각각 처리하는 [전처리 실행 가이드](preprocessing/README.md)를 참고하세요. 원본 악보와 연습 버전을 분리하고 MIDI·박자·마디·그룹·음역·화면 매핑 데이터를 생성합니다. 전용 의존성과 테스트는 해당 폴더에서 별도로 관리합니다.
