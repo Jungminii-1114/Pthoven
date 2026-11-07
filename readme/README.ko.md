@@ -12,6 +12,8 @@
 
 이 README는 서비스의 목표와 개발 계획을 설명합니다.
 
+**팀 테스트:** [CV 실험 웹 실행 가이드](../demo_test/experiment_web/README.md)에서 손가락 보정과 테스트 기록 수집을 시작할 수 있습니다. 실험 웹은 위의 서비스 계획과 구분하여 제공합니다.
+
 ## Overview
 
 **pthoven(프토벤)**은 **Prometheus**와 **Beethoven**을 결합한 이름입니다. 일반 RGB 카메라와 책상 위 손가락 동작을 이용해 가상 피아노를 연주하고, **Computer Vision과 Practice Coach Agent**를 연결하여 사용자에게 맞는 다음 연습을 제공하는 프로젝트입니다.

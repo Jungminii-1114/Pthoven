@@ -12,6 +12,8 @@
 
 This README describes the intended service and development plan.
 
+**Team testing:** [Run the local CV experiment lab](demo_test/experiment_web/README.md) to calibrate fingers and collect test records. The lab is separate from the planned coaching service.
+
 ## Overview
 
 **pthoven** combines **Prometheus** and **Beethoven**. The project aims to connect **Computer Vision with a Practice Coach Agent**, using an ordinary RGB camera and finger movements on a desk to support virtual piano practice.
