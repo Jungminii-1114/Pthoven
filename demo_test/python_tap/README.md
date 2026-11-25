@@ -40,6 +40,7 @@ python -m pthoven_tap replay --input ~/Downloads/pthoven-live-tap-diagnostics.js
 | `src/pthoven_tap/geometry.py` | 좌표 검증, 손바닥 로컬 축, TIP·관절 특징, 길이 검사 |
 | `src/pthoven_tap/calibration.py` | 기준·들림 보정, TIP/관절 그룹별 선택·가중치·진단 |
 | `src/pthoven_tap/detector.py` | 손가락별 들림→복귀, TIP 궤적·속도, 타건 후보 |
+| `src/pthoven_tap/rest_length.py` | 탭 사이 기준 자세로 구간 길이 기준을 인과적으로 재추정하는 이중 길이 기준(상대 기준 모드 기본) |
 | `src/pthoven_tap/temporal.py` | 현재·과거 최대 5프레임 특징의 인과적 중앙값 필터 |
 | `src/pthoven_tap/service.py` | 로컬 HTTP 연결용 세션 관리와 Python 진입점 |
 | `src/pthoven_tap/diagnostics.py` | 실시간·재생 결과의 보류 프레임과 동작 중단 원인 집계 |
@@ -161,6 +162,14 @@ H1 웹 실험실은 `/api/tap/reference`, `/api/tap/calibrate`, `/api/tap/sessio
 
 두 시행이 담긴 추가 기록에서 사용자는 마지막 시행에 약 19회의 동작을 했다고 알려주었습니다. 마지막 시행의 저장/기존 재생 결과는 14후보였고 수정 후 재생은 16후보였습니다. 첫 시행은 2후보를 유지합니다. 두 시행을 합산하거나 후보 수를 정확도·재현율로 해석하지 않습니다. 마지막 시행 종료 시에는 들림 동작 하나가 진행 중이어서, 종료 경계 밖의 복귀는 판단할 수 없습니다. 실제 정답 시각은 별도 검수가 필요합니다.
 
+
+### 2026-11-25: 기준 자세 길이 적응(이중 길이 기준)
+
+`engine_revision=2026-11-25-rest-length-v4`. 반복 탭 중 기준 자세의 MCP–PIP 추정 길이가 보정 때보다 커지는 드리프트(1.15→1.33배) 때문에, 사용자가 10회씩 확인한 검지 3시행이 9/8/0후보로 줄었다. `rest_length.py`는 상태 머신 REST의 과거 1초 기준 자세 프레임으로 길이 기준을 재추정한다. 매 프레임 원래 기준과 비교해 국소 왜곡이 작은 쪽을 쓴다. 길이 허용치와 판정 임계값은 바꾸지 않았다. 같은 기록의 재생은 10/10/10이었고, 정지 3시행·공중 탭 1시행의 후보는 0개 그대로였다. `local_baseline`에서 기본으로 켜지며, `PoseTapDetector(..., length_adaptation=False)`, 세션 payload의 `length_adaptation`, `replay --length-adaptation off`로 끌 수 있다. 원인 분석, 전후 비교 표, 한계는 [`docs/2026-11-25-tap-test-log.md`](docs/2026-11-25-tap-test-log.md)에 있다.
+
+`engine_revision=2026-11-25-calibration-filter-v5`부터는 보정의 기준·들림 품질(점수 변동, 동작 신호 통과율, 판정 가능 비율)을 상대 기준 판정기와 같은 5프레임 인과적 중앙값 필터를 거친 특징으로 평가한다. 모델 가중치는 원본 프레임으로 만들고, 원본 기준 수치는 `raw_*` 진단으로 남긴다. 들림 폭이 작은 약지가 원본 프레임 떨림 때문에 판정기보다 엄격한 조건으로 탈락하던 문제를 고쳤다(같은 문서 7장).
+
+`engine_revision=2026-11-25-landing-hold-v6`부터는 들림·복귀 중(REST가 아닐 때) 생긴 짧은 품질 탈락을 기존 최대 80ms 유예로 처리한다. 대상은 평가 손가락이 화면 안에 있고, 배율이 정상이며, 국소 왜곡이 0.8 이하인 경우다. 손가락이 바닥에 닿는 순간 생기는 랜드마크 튐 때문에 탭이 취소되던 문제를 고쳤다. 유예 뒤에도 유효한 복귀 프레임과 복귀 유지 시간을 다시 요구한다. 중지 재기록은 9/20 → 12/20이 됐고 정지 오검출은 0이다(같은 문서 9장).
 
 ## 다섯 손가락 적용 및 검증 범위
 
