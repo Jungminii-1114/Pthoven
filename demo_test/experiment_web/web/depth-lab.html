@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>pthoven · Depth 비교 실험실</title><link rel="stylesheet" href="/depth-lab.css"></head>
+<body><main>
+<header><div class="tag">PTHOVEN / RGB DEPTH EXPERIMENT</div><h1>어떤 신호가 타건을 더 잘 구분할까?</h1><p>관절 · 깊이 · 결합을 같은 프레임으로 비교합니다. RGB에서 추정한 상대 깊이이며, 실제 높이·접촉의 측정값은 아닙니다.</p></header>
+<div class="layout">
+<section class="camera-pane card">
+<div id="stage" class="stage"><video id="video" autoplay playsinline muted></video><img id="depthImage" alt="상대 깊이 히트맵" hidden><canvas id="overlay"></canvas><div id="placeholder">카메라 연결을 눌러 시작하세요.</div></div>
+<div class="row"><button id="connect" class="primary">카메라 연결</button><select id="camera" aria-label="카메라"><option value="">기본 카메라</option></select><button id="iphone">iPhone 연결</button><button id="refresh">장치 찾기</button><button id="disconnect">종료</button></div>
+<div class="row"><button id="mirror" aria-pressed="false">↔ 좌우 반전</button><button id="flip" aria-pressed="false">↕ 상하 반전</button><label class="check"><input id="heatmap" type="checkbox">깊이 겹쳐보기</label><label class="check"><input id="anchorsMode" type="checkbox">책상 기준점 찍기</label><button id="clearAnchors">기준점 지우기</button></div>
+<div class="status" role="status"><div id="cameraStatus">카메라 대기</div><div id="trackerStatus">손 추적 대기</div><div id="depthStatus">깊이 모델 상태 확인 중</div><div id="message">iPhone은 Mac의 연속성 카메라 장치로 연결합니다. 마이크를 요청하지 않습니다.</div></div>
+<p class="tiny">기준점은 손이 지나가지 않는 책상 네 모서리 쪽에 넓게 배치하세요. 화면 반전은 표시만 바꾸고 추론 좌표는 원본을 유지합니다.</p>
+</section>
+<aside class="controls" tabindex="0" aria-label="실험 설정과 기록">
+<section class="card"><h2>1. 깊이 모델 · 관측 조건</h2>
+<button id="prepare" class="primary">Depth Anything V2 Small 준비</button><button id="retryTracker">손 추적 다시 시도</button>
+<p class="tiny">첫 준비 시 공식 모델 가중치를 다운로드합니다. 영상은 이 컴퓨터의 Python 서버에서 처리하고 디스크에 자동 저장하지 않습니다.</p>
+<label>추적할 손 <select id="hand"><option value="Right">오른손</option><option value="Left">왼손</option></select></label>
+<label>모델 입력 크기 <select id="inputSize"><option value="294">294 · 속도 우선 실험</option><option value="518">518 · 세부 묘사 비교 실험</option></select></label>
+<div class="row"><label>깊이 요청 간격(ms)<input id="interval" type="number" min="80" max="2000" value="120"></label><label>관절 결합 비중<input id="weight" type="number" min="0" max="1" step="0.1" value="0.5"></label></div>
+<p id="anchorStatus">책상 기준점 0개 / 최소 3개</p><p id="speed" class="tiny">추론 속도를 측정한 뒤 보정하세요. 느린 추론은 빠른 탭을 놓칠 수 있습니다.</p>
+</section>
+<section class="card"><h2>2. 손가락별 보정</h2>
+<label>손가락 <select id="finger"><option value="index">검지</option><option value="middle">중지</option><option value="ring">약지</option><option value="pinky">소지</option><option value="thumb">엄지</option></select></label>
+<p>손가락을 편하게 내려둔 기준 자세를 저장한 뒤, 같은 손가락만 들어 유지하며 들림을 저장하세요. 카메라·기준점·손을 바꾸면 다시 보정합니다.</p>
+<button id="rest">기준 자세 3초</button><button id="lift">선택 손가락 들림 3초</button><button id="reset">보정 초기화</button><div id="calibration">보정 대기</div>
+<details><summary>판정 임계값 · 검증 전 고정</summary><div class="row"><label>들림 임계값<input id="liftThreshold" type="number" min="0.3" max="1.5" step="0.05" value="0.55"></label><label>복귀 임계값<input id="returnThreshold" type="number" min="0" max="0.5" step="0.05" value="0.2"></label></div><p class="tiny">개발 세션에서만 조정하고 평가 세션에서는 고정하세요. 깊이 기준·들림이 구분되지 않으면 깊이/결합 판정을 보류합니다.</p></details>
+</section>
+<section class="card"><h2>현재 판정 · 가상 피아노</h2><pre id="signals">손 보정 후 표시됩니다.</pre>
+<label>들어볼 방식 <select id="audition"><option value="none">소리 끄기</option><option value="pose_full">관절 · 전체 프레임</option><option value="pose_matched">관절 · 동일 프레임</option><option value="depth">깊이 · 손 위치는 MediaPipe</option><option value="fusion">관절+깊이</option></select></label>
+<label>가상 건반 위쪽 위치 <input id="keyboardY" type="range" min="0.25" max="0.8" step="0.01" value="0.55"></label><p class="tiny">화면의 도레미파솔라시 영역에 손을 놓고 테스트합니다. 소리는 출력용이며 판정 입력에 사용하지 않습니다.</p><div id="lastEvent">타건 후보 대기</div></section>
+<section class="card"><h2>3. 시나리오 수집</h2><div class="row"><label>익명 사용자<input id="person" value="p01" maxlength="40"></label><label>세션<input id="session" value="s01" maxlength="40"></label><label>데이터 용도<select id="split"><option value="dev">개발·튜닝</option><option value="test">평가 · 임계값 고정</option></select></label></div>
+<label>조건<select id="scenario"><option value="single_tap">정상 탭</option><option value="repeat">빠른 반복 탭</option><option value="rest">바닥에 놓고 정지</option><option value="air_tap">공중 탭</option><option value="slide">옆으로 끌기</option><option value="hand_move">손 전체 이동</option><option value="neighbor">이웃 손가락 움직임</option><option value="occlusion">가림</option><option value="lighting">다른 조명</option></select></label>
+<div class="row"><label class="check"><input id="recordVideo" type="checkbox" checked>원본 영상 기록</label><label class="check"><input id="recordFrames" type="checkbox" checked>깊이 입력 프레임 포함</label></div>
+<button id="record" class="primary">10초 기록</button><button id="stop">중지</button><button id="export">실험 JSON 저장</button><div id="trialStatus">기록 0개</div><p class="tiny">모든 방식은 한 시행에서 동시에 실행됩니다. ‘관절·동일 프레임’이 깊이/결합과 같은 샘플 시점을 쓰는 비교 기준입니다.</p>
+</section>
+<section class="card"><h2>4. 원본 검수 · 독립 정답 라벨</h2><label>시행<select id="reviewTrial"><option value="">기록 후 선택</option></select></label><div class="row"><button id="downloadVideo">영상 저장</button><label class="file">JSON 불러오기<input id="importJSON" type="file" accept="application/json"></label><label class="file">검수 영상 열기<input id="importVideo" type="file" accept="video/*"></label></div>
+<video id="reviewVideo" controls playsinline></video><img id="reviewFrame" alt="원본 검수 프레임" hidden><input id="frameSlider" type="range" min="0" max="0" value="0"><div id="reviewTime">원본 프레임 시각</div>
+<p class="tiny">검수 화면에는 예측을 그리지 않습니다. 영상 시작 오프셋은 브라우저 기록 시각 기준 근사값입니다. 샘플 이미지는 정확한 입력 시각을 보존합니다. 접촉을 판독할 수 없는 구간은 ‘불명’으로 제외하세요.</p>
+<div class="row"><label>실제 탭 시각(ms)<input id="labelTime" type="number" min="0" value="0"></label><label>손가락<select id="labelFinger"><option value="index">검지</option><option value="middle">중지</option><option value="ring">약지</option><option value="pinky">소지</option><option value="thumb">엄지</option></select></label></div><button id="addLabel">이 시각에 실제 탭 추가</button><button id="negative">확인된 무타건 시행</button><button id="clearLabels">라벨 초기화</button><div id="labels"></div>
+<div class="row"><label>불명 시작(ms)<input id="unknownStart" type="number" min="0" value="0"></label><label>불명 끝(ms)<input id="unknownEnd" type="number" min="0" value="1000"></label></div><button id="addUnknown">불명 구간 추가</button><div id="unknowns"></div>
+<label class="check"><input id="confirmLabels" type="checkbox">예측·시작 신호와 독립적으로 정답을 검수했습니다</label>
+<label>시각 허용 오차(ms)<input id="tolerance" type="number" min="20" max="500" value="100"></label><button id="evaluate" class="primary">동일 시행 평가</button><div id="metrics"></div><p class="tiny">F1은 물리 접촉이 독립적으로 확인된 라벨에 대해서만 해석하세요. 낮춘 속도에서 좋아진 결과를 원래 속도 성능으로 합치지 않습니다.</p></section>
+<footer><a href="/experiment-lab.html">← 전체 가설 실험실</a> · <a href="/tap-lab.html">관절·손등 실험</a> · <a href="/">실험 선택</a></footer>
+</aside></div></main><script type="module" src="/depth-lab.mjs"></script></body></html>

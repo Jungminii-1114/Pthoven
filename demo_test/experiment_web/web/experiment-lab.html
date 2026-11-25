@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pthoven · 가설 실험실</title><link rel="stylesheet" href="/experiment-lab.css"></head>
+<body><main>
+<nav><a class="brand" href="/experiment-lab.html"><span>p.</span> pthoven <small>LAB</small></a><a href="/tap-lab.html">타건 수집 ↗</a></nav>
+<header><div class="eyebrow">VISION-ONLY / EXPERIMENT WORKSPACE</div><h1>어떤 움직임이<br><em>타건을 알려줄까?</em></h1><p>같은 카메라, 같은 동작으로 네 가지 가설을 비교합니다.<br>실제 손을 보여주고, 보정하고, 기록해서 확인하세요.</p><div class="server"><i id="dot"></i><span id="health">로컬 서버 확인 중…</span><span class="divider">/</span><span id="depthState">Depth 상태 확인 중</span></div></header>
+<section class="setup" aria-labelledby="setupTitle"><h2 id="setupTitle">시작하기 전에 <span>01 — 03</span></h2><ol><li><b>카메라 고정</b><span>iPhone 연속성 카메라 또는 웹캠으로 책상과 손등이 보이게 위에서 촬영하세요.</span></li><li><b>손 선택·보정</b><span>실험 화면에서 카메라와 손을 선택하세요. H1·H3·H4는 기준 자세와 들림을 저장합니다.</span></li><li><b>조건별 기록</b><span>준비 1초·연주 10초·마무리 1초를 기록하고 JSON을 저장하세요.</span></li></ol></section>
+<section aria-label="실험 가설"><div class="section-heading"><h2>가설을 선택하세요</h2><span>4 HYPOTHESES</span></div><div class="cards">
+<a class="card pose" href="/tap-lab.html"><div class="card-top"><span>H1</span><small>Python 타건 후보 판정</small></div><div class="glyph">⌁</div><h3>TIP 궤적 + 관절각</h3><p>Python에서 길이의 공통 배율과 국소 왜곡을 구분하고, TIP 들림·복귀와 관절 변화를 함께 추적합니다.</p><ul><li>Python 보정·판정·손가락별 상태 머신</li><li>정지·옆으로 끌기·손 이동 오입력 확인</li><li>10초 기록 · JSON 재분석 · Python CLI</li></ul><strong>Python 관절 실험 열기 <span>↗</span></strong></a>
+<a class="card skin" href="/tap-lab.html?mode=skin"><div class="card-top"><span>H2</span><small>특징 관찰 · 판정기 미학습</small></div><div class="glyph">≋</div><h3>손등 표면 움직임</h3><p>손등 패치를 정렬하고 광학 흐름에서 전체 이동을 뺀 국소 움직임을 관찰합니다.</p><ul><li>잔여 흐름 · 겉보기 변형 · 밝기</li><li>실시간 추이와 선택적 이미지 기록</li><li>일반 피부 특징 실험 · 논문 모델 재현 아님</li></ul><strong>손등 관찰 열기 <span>↗</span></strong></a>
+<a class="card depth" href="/depth-lab.html"><div class="card-top"><span>H3</span><small>학습 모델 · 타건 후보 판정</small></div><div class="glyph">◉</div><h3>RGB 상대 깊이</h3><p>Depth Anything V2 Small의 상대 역깊이를 책상 기준과 비교합니다.</p><ul><li>기준점 3개 이상 · 손가락별 보정</li><li>모델 크기별 속도·관측률 확인</li><li>실제 높이(mm)·접촉 직접 측정 아님</li></ul><strong>깊이 실험 열기 <span>↗</span></strong></a>
+<a class="card fusion" href="/depth-lab.html?mode=fusion"><div class="card-top"><span>H4</span><small>동일 시행 비교</small></div><div class="glyph">⊕</div><h3>관절 + 깊이 결합</h3><p>관절과 깊이의 보정된 점수를 결합하고 단독 방식과 나란히 비교합니다.</p><ul><li>관절 전체 / 동일 프레임 / 깊이 / 결합</li><li>원본 검수 · 정답·불명 구간 입력</li><li>F1 · 분당 오입력 · 시각 오차 · 관측률</li></ul><strong>결합 비교 열기 <span>↗</span></strong></a>
+</div></section>
+<section class="protocol"><div><div class="eyebrow">FIRST EXPERIMENT</div><h2>처음에는 검지 하나로.</h2><p>조명과 카메라 위치를 유지하고 아래 조건을 순서대로 수집하세요.<br>조건별 동작 지시는 정답 라벨이 아닙니다. 확인 가능한 탭만 검수해 평가합니다.</p></div><div class="scenarios"><span>01　바닥에 둔 채 정지</span><span>02　들었다가 책상에 복귀</span><span>03　바닥에서 옆으로 끌기</span><span>04　책상에 닿지 않는 공중 탭</span><span>05　손 전체 이동 / 이웃 손가락</span><span>06　빠른 반복 / 잠깐 가림</span></div></section>
+<footer><p>웹 실험 환경 · 마이크 입력 없이 동작합니다.</p><p>카메라 권한은 각 실험 화면의 연결 버튼으로 요청합니다. H2·H3 분석은 실행 중인 로컬 컴퓨터에서 수행하며, 저장 버튼으로 실험 기록을 내려받습니다.</p></footer>
+</main><script type="module" src="/experiment-lab.mjs"></script></body></html>

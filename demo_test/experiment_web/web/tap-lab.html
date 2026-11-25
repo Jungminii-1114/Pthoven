@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTOVEN · Vision Tap Lab</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#10151f;color:#eef2fa}*{box-sizing:border-box}body{margin:0;padding:24px}main{max-width:1200px;margin:auto}h1{margin:6px 0;font-size:30px}h2{font-size:18px;margin-top:0}p{color:#aab7cb;line-height:1.65}a{color:#a8ddff}.tag{color:#ffd097;font-size:12px;letter-spacing:2px}.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:20px}.card{background:#1a2230;border:1px solid #334056;border-radius:14px;padding:20px;margin-bottom:16px}label{display:block;font-size:13px;margin:12px 0 6px}button,input,select{font:inherit;color:inherit;background:#263247;border:1px solid #50617c;border-radius:7px;padding:10px;max-width:100%}button{cursor:pointer;margin:5px 5px 5px 0}button:disabled{opacity:.4;cursor:default}.primary{background:#a4e2d0;color:#132b28;border:0;font-weight:700}video{display:none}canvas{width:100%;background:#090d15;border-radius:10px;max-height:56vh;object-fit:contain}#signals{font:12px ui-monospace,monospace;white-space:pre-wrap;line-height:1.8}#status{min-height:50px;color:#ffe1b0}small{color:#aab7cb}.row{display:flex;gap:8px;flex-wrap:wrap}.row>label{margin:4px 0}.row input{width:150px}#count{font-size:28px;color:#a4e2d0}.note{border-left:3px solid #ffd097;padding-left:12px}.muted{color:#8fa3c1} @media(max-width:850px){.grid{grid-template-columns:1fr}body{padding:14px}}
+.camera-stage{position:relative;aspect-ratio:16/9;background:#090d15;border-radius:10px;overflow:hidden}.camera-stage video{display:block;position:absolute;width:100%;height:100%;object-fit:contain}.camera-stage canvas{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;background:transparent;pointer-events:none}.camera-placeholder{position:absolute;inset:0;display:grid;place-content:center;gap:8px;text-align:center;color:#8fa3c1;padding:20px}.camera-placeholder[hidden]{display:none}.camera-placeholder strong{color:#eef2fa}.camera-status{padding:12px 14px;margin-top:12px;background:#101824;border:1px solid #3f5068;border-radius:9px;line-height:1.7;font-size:13px}.camera-status p{margin:3px 0;color:inherit;font-size:12px}.camera-status strong{color:#a4e2d0}#camera{flex:1;min-width:160px}#cameraHelp{font-size:12px;margin:8px 0}.check{display:flex;align-items:center;gap:7px}.row .check input{width:auto;flex:none}.camera-status[data-state="waiting"] strong{color:#ffd097}
+/* Keep the preview in view while the independent controls pane scrolls. */
+body{height:100dvh;overflow:hidden;padding:18px 22px}
+main{height:100%;max-width:none;display:flex;flex-direction:column;min-height:0}
+.lab-header{flex:none;padding-bottom:14px}
+.lab-header h1{font-size:25px}.lab-header p{font-size:12px;margin:6px 0 0}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin:0;overflow:hidden}
+.camera-pane,.controls-pane{min-width:0;min-height:0}
+.camera-pane{display:flex;flex-direction:column}
+.camera-card{height:100%;min-height:0;margin:0;padding:16px;display:grid;grid-template-rows:minmax(0,1fr) auto clamp(304px,40vh,344px);gap:10px}
+.camera-card .camera-stage{min-height:0;aspect-ratio:auto}
+.orientation-controls{display:flex;flex:none;gap:8px;flex-wrap:wrap}
+.orientation-controls button{margin:0;padding:8px 12px;font-size:12px}
+.orientation-controls button[aria-pressed="true"]{color:#132b28;background:#a4e2d0;border-color:#a4e2d0}
+.camera-footer{min-height:0;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:3px}
+.camera-footer .row{gap:6px}.camera-footer button,.camera-footer select{font-size:12px;padding:6px;margin:1px 0}
+.camera-footer #status{height:56px;min-height:56px;margin:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;font-size:12px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;padding:0 5px 0 0}
+.camera-status{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:8px;padding:9px 11px;font-size:12px;overflow-wrap:anywhere}
+.camera-status strong{grid-column:1/-1}.camera-status p{font-size:11px}
+.camera-footer .camera-status{display:block;contain:inline-size;padding:8px 12px}
+.status-heading{height:18px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-list{display:grid;gap:3px;margin:6px 0 0}
+.status-row{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:start;gap:8px;min-width:0}
+.status-row dt{margin:0;color:#8fa3ba;font-size:11px;line-height:18px}
+.status-row dd{margin:0;color:#d8e2f0;font-size:11px;line-height:18px;min-width:0;height:18px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;font-variant-numeric:tabular-nums;scrollbar-width:thin}
+.status-row--tracker dd{height:36px;line-height:18px;white-space:normal;overflow-x:hidden;overflow-y:auto;overflow-wrap:anywhere;scrollbar-gutter:stable}
+.camera-notice{border:1px solid #514636;border-radius:9px;background:#241e172b;margin:8px 0;padding:8px 10px;min-width:0}
+.camera-notice h2{font-size:10px;font-weight:600;letter-spacing:.5px;line-height:15px;color:#b8a487;margin:0 0 5px}
+.camera-options{border-top:1px solid #334056;padding-top:8px;margin-top:8px;font-size:12px}
+.camera-options summary{cursor:pointer;color:#b9cce7;padding:4px 0}
+.camera-options p{font-size:11px}.camera-options small{font-size:10px}
+.controls-pane{overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:8px;padding-bottom:20px;scroll-behavior:smooth}
+.controls-pane:focus-visible{outline:2px solid #a4e2d0;outline-offset:-2px}
+.controls-pane .card{padding:20px}.controls-pane>p{margin:0 0 12px;font-size:11px}
+.controls-pane #signals{overflow-wrap:anywhere;height:170px;overflow-y:auto;scrollbar-gutter:stable;font-variant-numeric:tabular-nums;margin:10px 0}#tapTrend{display:block;height:105px;max-height:105px;flex:none}.tap-legend{font-size:11px;margin:4px 0}
+#calibrationProgress{display:block;min-height:48px;font-size:13px}
+@media(max-width:640px){
+  body{padding:10px}.lab-header{padding-bottom:10px}.lab-header h1{font-size:20px}.lab-header p{display:none}.tag{font-size:10px}
+  .grid{grid-template-columns:1fr;grid-template-rows:minmax(180px,42%) minmax(0,1fr);gap:10px}
+  .camera-card{padding:10px;gap:6px;display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.9fr);grid-template-rows:minmax(0,1fr) auto;align-items:stretch}
+  .camera-card .camera-stage{min-height:0}.camera-footer{max-height:none;padding-right:0;grid-column:2;grid-row:1/3}
+  .orientation-controls{grid-column:1;grid-row:2;align-self:end;gap:5px}.orientation-controls button{width:100%;font-size:10px;padding:6px}
+  .camera-status{display:block}.camera-status p{margin-top:3px}.camera-footer #camera{min-width:0;width:100%;flex-basis:100%}
+  .status-row{grid-template-columns:32px minmax(0,1fr);gap:4px}.camera-footer .camera-status{padding:8px}.status-row dt,.status-row dd{font-size:10px}
+  .controls-pane{padding-right:2px}.controls-pane .card{padding:16px}.camera-placeholder{padding:8px;font-size:10px}
+}
+@media(min-width:641px) and (max-height:700px){.camera-card{grid-template-rows:minmax(0,1fr) auto minmax(0,50%)}}
+</style></head><body><main>
+<header class="lab-header">
+<div class="tag">PTOVEN / PYTHON VISION EXPERIMENT</div><h1>Python · TIP 궤적과 관절각 실험</h1>
+<p>카메라와 랜드마크는 브라우저에서 입력하고, 길이 검사·보정·TIP 궤적·관절각·상태 머신은 <strong>Python</strong>에서 계산합니다. 높이(mm)·물리 접촉의 측정값은 아닙니다.</p>
+</header>
+<div class="grid"><section class="camera-pane" aria-label="고정 카메라 미리보기">
+<div class="card camera-card"><div class="camera-stage"><video id="video" autoplay playsinline muted></video><canvas id="preview" width="960" height="540"></canvas><div id="cameraPlaceholder" class="camera-placeholder"><strong>CAMERA STANDBY</strong><span>카메라 연결 후 iPhone을 선택하세요.</span></div></div>
+<div class="orientation-controls" role="group" aria-label="카메라 영상 방향">
+<input id="mirror" type="checkbox" checked hidden><input id="flip" type="checkbox" hidden>
+<button id="mirrorToggle" type="button" aria-pressed="true">↔ 좌우 반전 · 켜짐</button>
+<button id="flipToggle" type="button" aria-pressed="false">↕ 상하 반전 · 꺼짐</button>
+</div>
+<div class="camera-footer">
+<div class="row"><button id="connect" class="primary">카메라 연결</button><select id="camera" aria-label="카메라"><option value="">기본 카메라</option></select><button id="disconnect">연결 종료</button></div>
+<div class="row"><button id="refreshCameras">↻ 장치 다시 찾기</button><button id="useIPhone">📱 iPhone 연결</button></div>
+<section id="cameraStatus" class="camera-status" data-state="waiting" aria-label="카메라 상태">
+<div class="status-heading"><strong id="cameraState" role="status">카메라 미연결</strong></div>
+<dl class="status-list">
+<div class="status-row"><dt>장치</dt><dd id="activeCamera" tabindex="0">없음</dd></div>
+<div class="status-row"><dt>영상</dt><dd id="videoState" tabindex="0">대기</dd></div>
+<div class="status-row status-row--tracker"><dt>손 추적</dt><dd id="trackerState" tabindex="0" role="status">대기</dd></div>
+</dl></section>
+<section class="camera-notice" aria-label="안내 및 오류"><h2>안내 · 오류</h2><p id="status" role="status" tabindex="0">카메라는 연결 버튼을 누른 뒤 권한을 허용하세요. 마이크는 사용하지 않습니다.</p></section>
+<details class="camera-options"><summary>추가 설정 · 손 추적 / 데이터 기록</summary>
+<button id="retryTracker">손 추적 다시 시도</button>
+<p id="cameraInventory">장치 목록을 확인하고 있습니다…</p><p id="cameraHelp">권한 승인 전에는 실제 장치 이름이 숨겨질 수 있습니다. iPhone은 Mac의 연속성 카메라 장치로 표시되어야 합니다.</p>
+<div class="row"><label class="check"><input id="skin" type="checkbox"> 손등 작은 이미지도 기록</label></div>
+<small>추적 모델은 CDN에서 로드합니다. 손등 실시간 관찰을 켜면 정렬한 48×48 이미지 두 장만 이 Mac의 분석 서버로 전송합니다. 서버는 저장하지 않습니다. 손등 이미지의 JSON 기록은 별도 선택 사항입니다.</small>
+</details></div></div>
+</section><aside class="controls-pane" tabindex="0" aria-label="보정 및 테스트 · 이 영역을 스크롤하세요">
+<p>카메라를 보면서 아래에서 보정·테스트하세요. 이 영역만 스크롤됩니다.</p>
+<div class="card"><h2>1. 개인별 기준 보정</h2>
+<p id="pythonState" role="status">Python 판정 엔진 확인 중</p>
+<label for="handSide">추적할 손</label><select id="handSide"><option value="Right">오른손</option><option value="Left">왼손</option></select>
+<p>버튼을 누르면 <strong>준비 1.5초</strong> 후 관측된 프레임을 최소 1.6초 수집합니다. 준비 시간에 자세를 잡고, 수집 중에는 그대로 유지하세요.</p>
+<button id="rest">기준 자세 저장 · 준비 후 수집</button>
+<label for="finger">보정할 손가락</label><select id="finger"><option value="index">검지</option><option value="middle">중지</option><option value="ring">약지</option><option value="pinky">소지</option><option value="thumb">엄지</option></select>
+<button id="lift">선택 손가락 들림 저장</button><button id="cancelCalibration" disabled>보정 취소</button>
+<div id="calibrationProgress" class="camera-status" role="status">기준 자세부터 저장하세요.</div>
+<p id="calibrated">보정된 손가락: 없음</p><button id="reset">보정 초기화</button>
+<details id="calibrationDetails"><summary>보정 품질·실패 원인</summary><pre id="calibrationDiagnostics" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px">아직 보정 기록이 없습니다.</pre></details>
+<p class="muted" style="font-size:11px">Python P1 · 공통 길이 배율과 국소 왜곡을 분리합니다. TIP의 들림·복귀와 관절각 변화가 함께 관측되어야 타건 후보를 표시합니다.</p>
+<button id="exportCalibration">보정 진단 JSON 저장</button>
+<label>저장한 진단 JSON 재분석<input id="importCalibration" type="file" accept="application/json"></label>
+<small>이전 실패 기록을 Python에서 다시 분석합니다. 현재 카메라의 보정은 유지됩니다.</small>
+<small>진단 파일에는 기준·들림의 3D 랜드마크와 실패 원인·품질 수치가 들어갑니다. 영상 이미지는 포함하지 않습니다.</small>
+</div>
+<div class="card"><h2>현재 판정 · 타건 누락 진단</h2>
+<label for="tapMode">판정 방식</label><select id="tapMode"><option value="local_baseline" selected>상대 기준 · 개선 모드 (기본)</option><option value="fixed">고정 기준 · 비교 모드</option></select>
+<p id="modeStatus" role="status" style="font-size:12px;color:#a4e2d0">선택한 판정 방식: 상대 기준 · 개선 모드</p>
+<p class="muted" style="font-size:11px">상대 기준은 안정된 동작 직전 자세를 사용합니다. 경미한 품질 탈락은 최대 80ms 동안 판정을 멈추고, 손 소실·평가 손가락의 화면 이탈은 동작을 취소합니다. 접촉을 확인하는 기능은 아닙니다.</p>
+<label>기존 연주 기록의 보정 불러오기<input id="importCaptureModel" type="file" accept="application/json"></label><span id="count">0</span> <small>전체 누적 타건 후보 · 최근 10초 <strong id="windowCount">0</strong>회 / 접촉 미확인</small><div id="signals">먼저 기준 자세를 보정하세요.</div>
+<canvas id="tapTrend" width="600" height="120" aria-label="선택 손가락의 TIP·관절 점수와 들림·복귀 기준"></canvas>
+<p class="tap-legend"><span style="color:#a4e2d0">민트: TIP</span> · <span style="color:#ffd097">노랑: 관절</span> · 점선: Python 판정 기준 · 관측 보류 시 선이 끊깁니다.</p>
+<p id="traceHealth" role="status" style="height:62px;overflow-y:auto;scrollbar-gutter:stable;font-size:12px;line-height:1.6">아직 입력 기록이 없습니다. 카메라를 연결하고 보정한 손을 보여주세요.</p>
+<div class="row"><button id="recordQuick" class="primary">준비 후 10초 연주 기록</button><button id="exportTrial">고정 기록 JSON 저장</button></div>
+<small>준비 1초 → 연주 10초 → 복귀 확인 1초, 총 12초를 기록합니다. 완료된 기록은 손을 뺀 뒤에도 유지됩니다.</small>
+<button id="exportRecent">최근 구간 + 마지막 손 관측 진단 저장</button><small>최근 10초와 마지막 손 관측 구간을 구분해서 보존합니다. 좌표가 없는 실패 구간도 함께 남깁니다. 영상은 포함하지 않습니다.</small>
+<p id="lastEvent" class="muted">검증용 입력은 게임 점수에 반영하지 않습니다.</p></div>
+<div class="card" id="skinCard"><h2>H2 · 손등 표면 움직임 관찰</h2>
+<label class="check"><input id="liveSkin" type="checkbox"> 손등 특징 실시간 관찰</label>
+<p>손등 정렬 → 광학 흐름 → 전체 이동 제거 → 국소 움직임·겉보기 변형을 측정합니다. 정지 / 정상 탭 / 손 전체 이동 / 공중 탭을 비교해보세요.</p>
+<div class="row"><img id="skinPreview" width="96" height="96" alt="최근 분석한 손등 패치" hidden><pre id="skinSignals" role="status">관찰을 켜고 손등을 보여주세요.</pre></div>
+<canvas id="skinTrend" width="600" height="120" style="height:100px" aria-label="최근 80회 손등 국소 움직임 추이"></canvas>
+<small>그래프: 국소 잔여 움직임(px/프레임 쌍), 자동 세로축. 타건 확률·깊이·압력이 아닙니다. 피부색·주름·조명과 손 자세 변화의 영향도 함께 관측됩니다. 기록을 시작하면 시각이 붙은 특징이 JSON에 포함됩니다.</small>
+</div>
+<div class="card"><h2>2. 시나리오별 수집</h2><div class="row"><label>익명 사용자 ID<br><input id="person" value="p01" maxlength="40"></label><label>세션 ID<br><input id="session" value="s01" maxlength="40"></label></div>
+<label for="scenario">실험 조건</label><select id="scenario">
+<option value="single_tap">선택 손가락 정상 탭</option><option value="rest">손가락을 바닥에 둔 채 정지</option><option value="repeat">같은 손가락 반복 탭</option><option value="slide">바닥에서 손가락 옆으로 끌기</option><option value="air_tap">책상에 닿지 않는 공중 탭</option><option value="hand_move">손 전체 이동</option><option value="neighbor">이웃 손가락 움직임</option><option value="occlusion">손가락 잠깐 가리기</option><option value="lighting">다른 조명에서 정상 탭</option>
+</select><p>준비 1초·연주 10초·마무리 1초를 함께 기록합니다. 안내 시각은 동작 지시이며 실제 타건 정답 시각이 아닙니다.</p>
+<button id="record" class="primary">준비 후 10초 연주 기록</button><button id="stop">기록 중지</button><button id="export">JSON 내려받기</button><p id="trials">저장한 시행: 0</p>
+<p class="note">실제 인식률은 정답 시각을 별도로 검수한 뒤 계산합니다. 정답이 없으면 F1은 표시하지 않습니다. 공중 탭 오입력도 반드시 확인하세요.</p>
+</div><p><a href="/experiment-lab.html">← 전체 가설 실험실</a> · <a href="/depth-lab.html">관절/깊이 비교 →</a></p><a href="/">실험 선택으로 돌아가기</a>
+</aside></div><script type="module" src="/tap-lab.mjs"></script></main></body></html>
