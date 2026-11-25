@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 from .geometry import FINGERS, FEATURE_NAMES, TIP_INDICES, ANGLE_INDICES, unpack_frame, extract_features, length_quality
+from .temporal import CausalFeatureMedian
 
 ALGORITHM = "python_tip_angles_v1"
 
@@ -15,10 +16,11 @@ class CalibrationError(ValueError):
 def summarize(frames, finger):
     if not isinstance(frames, list) or len(frames) > 5000:
         raise ValueError("보정에는 최대 5,000개의 프레임을 사용합니다.")
-    rows = []
+    rows = []; timed = []
     for frame in frames:
         try:
-            world, image = unpack_frame(frame); rows.append(extract_features(world, finger, image))
+            world, image = unpack_frame(frame); feature = extract_features(world, finger, image); rows.append(feature)
+            timed.append((frame.get("t_ms") if isinstance(frame, dict) else None, feature))
         except (ValueError, TypeError, KeyError, IndexError):
             pass
     if len(rows) < 5 or len(rows) < len(frames) * .7:
@@ -33,10 +35,25 @@ def summarize(frames, finger):
     if len(kept) < max(5, len(frames) * .7):
         raise CalibrationError("capture_quality_low", "추적 이상 프레임이 너무 많습니다.")
     matrix = np.stack([r["vector"] for r in kept])
-    return {"rows": kept, "mean": matrix.mean(axis=0), "std": matrix.std(axis=0), "present": present,
+    return {"rows": kept, "filtered_rows": causal_filtered_rows(timed), "mean": matrix.mean(axis=0), "std": matrix.std(axis=0), "present": present,
             "lengths": np.median(np.stack([r["lengths"] for r in kept]), axis=0),
             "palm_width": float(np.median([r["palm_width"] for r in kept])),
             "stats": {"input_frames": len(frames), "valid_frames": len(rows), "used_frames": len(kept), "outlier_frames": len(rows) - len(kept)}}
+
+
+def causal_filtered_rows(timed):
+    """상대 기준 판정기와 같은 5프레임·100ms 인과적 중앙값 필터를 통과한 특징.
+
+    프레임 시각이 없거나 단조 증가하지 않는 이전 형식은 필터를 적용할 수 없어 None을 돌려준다.
+    """
+    times = [t for t, _ in timed]
+    if not timed or any(isinstance(t, bool) or not isinstance(t, (int, float)) or not np.isfinite(t) for t in times) \
+            or any(b <= a for a, b in zip(times, times[1:])):
+        return None
+    f = CausalFeatureMedian(); out = []
+    for t, feature in timed:
+        out.append(f.update(t, feature)[0])
+    return out
 
 
 def group_signal(feature, model, group):
@@ -92,17 +109,33 @@ def calibrate(rest_frames, lift_frames, finger):
             diagnostics["problems"].append(f"{name}_unobservable")
     if not diagnostics["problems"]:
         for phase, summary in [("rest", rest), ("lift", lift)]:
-            observed = [measure(r, model) for r in summary["rows"]]
             target = 0 if phase == "rest" else 1
-            noise_scores = {g: float(np.sqrt(np.mean([(r[g]["score"] - target) ** 2 for r in observed]))) for g in ("tip", "angles")}
-            motion_ready = [r["tip"]["valid"] and r["angles"]["valid"] and
-                            (max(r["tip"]["score"], r["angles"]["score"]) <= .2 if phase == "rest" else min(r["tip"]["score"], r["angles"]["score"]) >= .55) for r in observed]
+
+            def motion_quality(rows):
+                observed = [measure(r, model) for r in rows]
+                noise = {g: float(np.sqrt(np.mean([(r[g]["score"] - target) ** 2 for r in observed]))) for g in ("tip", "angles")}
+                motion = [r["tip"]["valid"] and r["angles"]["valid"] and
+                          (max(r["tip"]["score"], r["angles"]["score"]) <= .2 if phase == "rest" else min(r["tip"]["score"], r["angles"]["score"]) >= .55) for r in observed]
+                return observed, noise, motion
+
+            # 원본 프레임 품질(이전 기준)은 진단에 남긴다. 상대 기준 판정기는 5프레임 인과적
+            # 중앙값을 거친 특징을 쓰므로, 시각이 있는 기록은 같은 필터를 거친 특징으로
+            # 판정 가능 비율을 평가한다. 들림 폭이 작은 약지처럼 원본 떨림이 들림 폭 대비 큰
+            # 손가락이 런타임보다 엄격한 조건으로 탈락하지 않게 한다. 모델 가중치는 바꾸지 않는다.
+            raw_observed, raw_noise, raw_motion = motion_quality(summary["rows"])
+            filtered = summary.get("filtered_rows")
+            if filtered:
+                observed, noise_scores, motion_ready = motion_quality(filtered); quality_filter = "causal_feature_median"
+            else:
+                observed, noise_scores, motion_ready = raw_observed, raw_noise, raw_motion; quality_filter = "none"
             ready = [motion and r["geometry"]["valid"] and r["image_visibility"]["valid"] for motion, r in zip(motion_ready, observed)]
+            raw_ready = [motion and r["geometry"]["valid"] and r["image_visibility"]["valid"] for motion, r in zip(raw_motion, raw_observed)]
             geometry = [r["geometry"] for r in observed]
             segment_errors = np.asarray([g["segment_errors"] for g in geometry])
             segment_names = ["CMC–MCP", "MCP–IP", "IP–TIP"] if finger == "thumb" else ["MCP–PIP", "PIP–DIP", "DIP–TIP"]
             diagnostics["phases"][phase] = {"score_noise": noise_scores, "ready_ratio": float(np.mean(ready)),
-                "motion_ready_ratio": float(np.mean(motion_ready)),
+                "motion_ready_ratio": float(np.mean(motion_ready)), "quality_filter": quality_filter,
+                "raw_score_noise": raw_noise, "raw_ready_ratio": float(np.mean(raw_ready)), "raw_motion_ready_ratio": float(np.mean(raw_motion)),
                 "geometry_ready_ratio": float(np.mean([g["valid"] for g in geometry])),
                 "visibility_ready_ratio": float(np.mean([r["image_visibility"]["valid"] for r in observed])),
                 "valid_motion_rejected_by_geometry_ratio": float(np.mean([motion and not r["geometry"]["valid"] for motion, r in zip(motion_ready, observed)])),
@@ -152,6 +185,8 @@ def diagnostic_text(d):
                       f"  국소 왜곡 보류 {p['shape_rejected_ratio']:.0%} · 극단 배율 보류 {p['scale_rejected_ratio']:.0%}",
                       f"{label} 공통 배율 {p['common_scale']:.3f} · 손바닥 대비 배율 {p['relative_scale']:.3f}",
                       f"{label} 국소 길이 왜곡 {p['shape_error']:.1%} · 이전 방식 길이 오차 {p['old_normalized_length_error']:.1%}"])
+        if p.get("quality_filter") == "causal_feature_median":
+            lines.append(f"  판정기와 같은 5프레임 인과 중앙값 기준 · 필터 전 원본: 점수 변동 TIP {p['raw_score_noise']['tip']:.1%} / 관절 {p['raw_score_noise']['angles']:.1%} · 동작 신호 통과 {p['raw_motion_ready_ratio']:.0%} · 판정 가능 {p['raw_ready_ratio']:.0%}")
         if "shape_error_p95" in p:
             lines.append(f"  국소 왜곡 중앙값 {p['shape_error']:.1%} / 95백분위 {p['shape_error_p95']:.1%} · 프레임별 허용 {p['shape_limit']:.0%}")
         for name, s in p.get("segments", {}).items():

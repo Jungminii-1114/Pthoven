@@ -28,6 +28,7 @@ def main():
     replay.add_argument("--input", type=Path, required=True); replay.add_argument("--model", type=Path); replay.add_argument("--output", type=Path, required=True)
     replay.add_argument("--trial-index", type=int, default=0, help="여러 시행 중 재생할 0부터 시작하는 번호")
     replay.add_argument("--mode", choices=["fixed", "local_baseline"], help="기록의 판정 방식을 재생하거나 다른 방식으로 비교")
+    replay.add_argument("--length-adaptation", choices=["on", "off"], help="기준 자세 길이 적응(상대 기준 모드 기본 on)을 강제로 켜거나 끔")
     args = parser.parse_args()
     if args.command == "demo":
         model = calibrate([analytic_hand() for _ in range(20)], [analytic_hand({"index": 1}) for _ in range(20)], "index")
@@ -51,7 +52,8 @@ def main():
             if not calibration:
                 raise ValueError("기록 안에 보정 모델이 없습니다. --model을 지정하세요.")
         mode = args.mode or trial.get("detector_mode", "fixed")
-        detector = PoseTapDetector(calibration, mode=mode)
+        adaptation = None if args.length_adaptation is None else args.length_adaptation == "on"
+        detector = PoseTapDetector(calibration, mode=mode, length_adaptation=adaptation)
         frames = data.get("frames")
         if frames is None:
             frames = trial.get("frames")
@@ -61,6 +63,7 @@ def main():
                   "frames": [detector.update(f["t_ms"], f.get("world_landmarks"), f.get("landmarks")) for f in frames]}
         result["diagnostic_summary"] = summarize_outputs(result["frames"])
         result["detector_mode"] = mode
+        result["length_adaptation"] = detector.length_adaptation
     result['engine_revision'] = ENGINE_REVISION
     text = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)
     if args.output:

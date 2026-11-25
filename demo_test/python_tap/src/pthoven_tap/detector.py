@@ -183,12 +183,18 @@ class FingerMachine:
 
 
 class PoseTapDetector:
-    def __init__(self, calibration=None, options=None, mode="fixed"):
+    def __init__(self, calibration=None, options=None, mode="fixed", length_adaptation=None):
         if mode not in ("fixed", "local_baseline"):
             raise ValueError("지원하지 않는 판정 방식입니다.")
+        # 기준 자세 길이 적응은 상대 기준 모드의 기본값이다. 비교 재생을 위해 끌 수 있다.
+        self.length_adaptation = (mode == "local_baseline") if length_adaptation is None else bool(length_adaptation)
         self.options = options or TapOptions(); self.models = {}; self.machines = {}; self.filters = {}; self.last_time = None; self.mode = mode
+        self.length_adapters = {}
         for finger, model in (calibration or {}).items():
             self.models[finger] = validate_model(model, finger)
+            if self.length_adaptation:
+                from .rest_length import RestLengthAdapter
+                self.length_adapters[finger] = RestLengthAdapter(model)
             if mode == "local_baseline":
                 from .local_baseline import LocalBaselineMachine
                 self.machines[finger] = LocalBaselineMachine(self.options, angle_noise=model.get("diagnostics", {}).get("phases", {}).get("rest", {}).get("score_noise", {}).get("angles", .22))
@@ -201,8 +207,15 @@ class PoseTapDetector:
             raise ValueError("프레임 시각은 단조 증가해야 합니다.")
         self.last_time = t_ms; signals, events = {}, []
         for finger, model in self.models.items():
+            length_info = None
             try:
                 feature = extract_features(world_landmarks, finger, landmarks); observation = measure(feature, model)
+                if finger in self.length_adapters:
+                    machine = self.machines[finger]
+                    reference, length_info = self.length_adapters[finger].observe(t_ms, feature, observation, getattr(machine, "machine", machine).phase)
+                    if reference is not None:
+                        model = {**model, "length_reference": reference}
+                        observation = measure(feature, model)
                 if finger in self.filters:
                     raw = observation
                     # 평가 손가락 화면 이탈·심한 국소 붕괴·극단 배율은 과거 값으로 덮지 않는다.
@@ -221,6 +234,8 @@ class PoseTapDetector:
                 if finger in self.filters:
                     self.filters[finger].clear()
                 observation = {"valid": False, "reason": str(error), "confidence": 0., "score": None}
+            if length_info is not None:
+                observation["rest_length"] = length_info
             event, temporal = self.machines[finger].update(t_ms, observation)
             signals[finger] = {**observation, **temporal}
             if event:

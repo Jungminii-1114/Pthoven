@@ -42,6 +42,21 @@ class LocalBaselineMachine:
         return all(r["score"] is not None and -.5 <= r["score"] <= 2 and r["residual"] <= 1.2
                    for r in [observation["tip"], observation["angles"]])
 
+    @staticmethod
+    def landing_quality_failure(observation, shape_max=.8):
+        """들림 사이클 진행 중의 짧은 품질 탈락(2026-11-25 v6).
+
+        실제 중지 기록에서 손가락이 바닥에 닿는 순간 1~3프레임의 국소 왜곡(0.5~0.8)이나
+        관절 범위 이탈이 생겼다. 그때마다 진행 중이던 사이클이 취소돼 탭을 놓쳤다.
+        평가 손가락이 화면 안에 있고 배율이 정상이며 왜곡이 0.8 이하이면, 기존과 같은
+        최대 80ms 유예로 보낸다. 유예 프레임은 점수·궤적·복귀 유지 시간에 쓰지 않으므로,
+        후보를 내려면 유예 뒤에도 유효한 복귀 프레임을 다시 확인해야 한다.
+        """
+        if "geometry" not in observation or not observation.get("image_visibility", {"valid": True})["valid"]:
+            return False
+        g = observation["geometry"]
+        return g["shape_error"] <= shape_max and .5 <= g["relative_scale"] <= 1.8
+
     def update(self, t_ms, observation):
         if isinstance(t_ms, bool) or not isinstance(t_ms, (float, int)) or not math.isfinite(t_ms) or t_ms < 0 or (self.last_time is not None and t_ms <= self.last_time):
             raise ValueError("프레임 시각은 단조 증가해야 합니다.")
@@ -63,7 +78,8 @@ class LocalBaselineMachine:
             self.machine.last_time = t_ms; self.machine.reset()
             event = None
             temporal = self.machine.report(t_ms, "neutral_quality_skip", "기준 수집 중 짧은 품질 탈락 · 좌표 제외 후 재관측", {"tip_velocity": None, "angle_velocity": None}, blockers=observation_problems(observation))
-        elif not valid and self.machine.ready and self.reference is not None and self.last_valid_time is not None and self.soft_quality_failure(observation) and t_ms-self.last_valid_time <= 80:
+        elif not valid and self.machine.ready and self.reference is not None and self.last_valid_time is not None and t_ms-self.last_valid_time <= 80 and (
+                self.soft_quality_failure(observation) or (self.machine.phase != "REST" and self.landing_quality_failure(observation))):
             self.window.clear()
             self.hold_since = self.last_valid_time
             self.held_frames += 1; self.cycle_held_frames += 1
@@ -71,8 +87,9 @@ class LocalBaselineMachine:
                 self.machine.lift_at += gap
             if self.machine.phase == "RETURNED":
                 self.machine.phase = "LIFTED"; self.machine.return_at = None
-            self.machine.last_time = t_ms
-            self.machine.previous = None; self.machine.previous_vector = None
+            # 유예 프레임 자체는 점수·궤적에 넣지 않는다. 직전 유효 프레임(점수·시각)은 지우지 않아,
+            # 유예 뒤 첫 유효 프레임의 속도·이동 경로를 마지막 유효 프레임 기준으로 계산한다.
+            # (v6 이전에는 지워서, 착지 순간 탈락 뒤 하강 속도가 0으로 남아 tip_return_missing이 됐다.)
             event = None
             temporal = self.machine.report(t_ms, "quality_hold", "짧은 품질 탈락 · 최대 80ms 판정 유예", {"tip_velocity": None, "angle_velocity": None})
         elif not valid or (gap is not None and gap > self.machine.options.max_gap_ms):

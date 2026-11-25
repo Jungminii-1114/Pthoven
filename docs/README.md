@@ -12,5 +12,6 @@
 | 공통 | [데이터·반환·명령 계약](plan/05-contracts/README.md) | 상태·시간·근거·실제 적용 확인 |
 | 실행·평가 | [하네스와 평가](plan/06-harness-and-evaluation.md) | 호출 제어·실행 기록·비교·데모 |
 | 팀 합의 | [결정 항목](plan/07-decision-points.md) | 정책·모델·제품 선택 기준 |
+| 개발 명세 | [B-01·B-02 상세 PRD](prd/B-01-B-02/PRD.md) | 세션·보정·가상 입력의 요구사항, Python 기술 상세, API, 인수 테스트 |
 
 [프로젝트 소개](../README.md) · [파이프라인 안내](PIPELINE_DESCRIPTION.md)

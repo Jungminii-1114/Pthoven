@@ -16,7 +16,7 @@ class TapService:
         self.sessions = {}; self.lock = threading.Lock(); self.max_sessions = max_sessions
 
     def status(self):
-        return {"engine": "python", "algorithm": ALGORITHM, "engine_revision": ENGINE_REVISION, "modes": ["fixed", "local_baseline"], "fingers": FINGERS, "feature_names": FEATURE_NAMES, "contact_verified": False}
+        return {"engine": "python", "algorithm": ALGORITHM, "engine_revision": ENGINE_REVISION, "modes": ["fixed", "local_baseline"], "length_adaptation_default": {"fixed": False, "local_baseline": True}, "fingers": FINGERS, "feature_names": FEATURE_NAMES, "contact_verified": False}
 
     def reference(self, payload):
         try:
@@ -39,7 +39,10 @@ class TapService:
         calibration = payload.get("calibration", {})
         if not isinstance(calibration, dict) or len(calibration) > 5:
             raise ValueError("손가락별 Python 보정 모델이 필요합니다.")
-        detector = PoseTapDetector(copy.deepcopy(calibration), mode=payload.get("mode", "fixed"))
+        adaptation = payload.get("length_adaptation")
+        if adaptation is not None and not isinstance(adaptation, bool):
+            raise ValueError("length_adaptation은 true/false여야 합니다.")
+        detector = PoseTapDetector(copy.deepcopy(calibration), mode=payload.get("mode", "fixed"), length_adaptation=adaptation)
         now = time.monotonic(); key = uuid.uuid4().hex
         with self.lock:
             expired = [k for k, s in self.sessions.items() if now - s["used_at"] > 1800]
@@ -48,7 +51,8 @@ class TapService:
             if len(self.sessions) >= self.max_sessions:
                 raise RuntimeError("사용 중인 실험 세션이 많습니다. 잠시 후 다시 시도하세요.")
             self.sessions[key] = {"detector": detector, "used_at": now, "sequence": -1, "lock": threading.Lock()}
-        return {"session_id": key, "algorithm": ALGORITHM, "engine_revision": ENGINE_REVISION, "mode": detector.mode}
+        return {"session_id": key, "algorithm": ALGORITHM, "engine_revision": ENGINE_REVISION, "mode": detector.mode,
+                "length_adaptation": detector.length_adaptation}
 
     def frames(self, payload):
         key, frames, sequence = payload.get("session_id"), payload.get("frames"), payload.get("sequence")

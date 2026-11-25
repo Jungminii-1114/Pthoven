@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>B01·B02 · 보정과 가상 입력</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="B01 세션 준비 처음 화면"><span class="brand-mark" aria-hidden="true">P</span><span>PTOVEN <small>VISION WORKSPACE</small></span></a>
+    <span class="scope-label">B01·B02 <span>세션 준비 · 보정 · 가상 입력</span></span>
+    <span id="server-status" class="server-status">서버 확인 중</span>
+  </header>
+
+  <main class="workspace">
+    <section class="preview-column" aria-labelledby="preview-title">
+      <div class="section-heading"><div><p class="eyebrow">01 / LIVE PREVIEW</p><h1 id="preview-title">손과 화면을 맞춰보세요.</h1></div><span id="preview-indicator" class="pill">연결 전</span></div>
+      <div class="preview-card">
+        <div class="preview-topline"><span id="active-camera">연결된 카메라 없음</span><span id="resolution-label">— × —</span></div>
+        <div id="preview-stage" class="preview-stage">
+          <div id="source-layer" class="source-layer">
+            <video id="camera-video" autoplay muted playsinline aria-label="선택한 카메라의 실시간 영상"></video>
+            <canvas id="landmark-overlay" aria-label="Python 서버가 반환한 손 관절 위치"></canvas>
+          </div>
+          <div id="preview-placeholder" class="preview-placeholder"><span class="camera-glyph" aria-hidden="true">▣</span><strong>카메라를 연결해 주세요</strong><span>오른쪽에서 사용할 장치를 직접 선택합니다.</span></div>
+          <div id="keyboard-guide" class="keyboard-guide" aria-label="화면 위 가상 건반 배치 가이드"><span>C4</span><span>D4</span><span>E4</span><span>F4</span><span>G4</span><span>A4</span><span>B4</span><span>C5</span></div>
+          <span class="preview-caption">가상 건반 배치 가이드</span>
+        </div>
+        <div class="preview-toolbar"><div class="legend"><i></i> 선택 손 <i class="other"></i> 다른 손</div><div class="flip-buttons"><button id="flip-x" type="button" class="button compact" aria-pressed="false">↔ 좌우 반전 <span>꺼짐</span></button><button id="flip-y" type="button" class="button compact" aria-pressed="false">↕ 상하 반전 <span>꺼짐</span></button></div></div>
+      </div>
+
+      <div class="status-grid" aria-label="서로 독립적인 준비 상태">
+        <div><span>영상</span><strong id="video-status">연결 전</strong></div>
+        <div><span>손 추적</span><strong id="tracker-status">모델 미준비</strong></div>
+        <div><span>보정</span><strong id="calibration-status">보정 전</strong></div>
+        <div><span>입력 준비</span><strong id="ready-status">확인 전</strong></div>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite">카메라 연결 → 모델 준비 → 기준 자세 → 손가락 들림 → 입력 준비 확인 순서로 진행하세요.</div>
+      <div class="preview-footnote"><span class="info-icon" aria-hidden="true">i</span><p>RGB 영상으로 손의 자세를 보정합니다. <strong>실제 책상 접촉·물리적 높이·압력을 측정하지 않습니다.</strong> 원본 프레임은 표시 반전 없이 Python 서버로 전송됩니다.</p></div>
+    </section>
+
+    <aside class="settings-column" aria-label="세션 설정 및 진단" tabindex="0">
+      <div class="settings-intro"><p class="eyebrow">02 / SESSION SETUP</p><h2>나에게 맞는 입력 준비</h2><p>한 번에 한 카메라, 한 손을 사용합니다.</p></div>
+
+      <section class="settings-card" aria-labelledby="camera-title"><div class="card-heading"><h3 id="camera-title"><span class="step">1</span> 카메라 연결</h3><span id="permission-status" class="mini-label">권한 미확인</span></div>
+        <label for="camera-select">사용할 카메라</label><div class="select-row"><select id="camera-select"><option value="">장치 목록 확인 중</option></select><button id="refresh-cameras" class="button icon-button" type="button" aria-label="카메라 목록 새로고침">↻</button></div>
+        <p id="camera-help" class="help">장치명이 비어 있으면 권한을 먼저 허용한 뒤 목록을 다시 확인하세요.</p>
+        <div class="button-row"><button id="permission-button" class="button" type="button">권한 허용 · 이름 확인</button><button id="connect-button" class="button primary" type="button">선택 장치 연결</button><button id="stop-button" class="button danger-quiet" type="button" disabled>연결 종료</button></div>
+        <details class="help-details"><summary>iPhone 연속성 카메라가 보이지 않나요?</summary><p>운영체제가 iPhone을 카메라 장치로 제공해야 목록에 표시됩니다. 연결·권한을 확인하고 목록을 새로고침하세요. 선택한 장치가 실패해도 다른 장치로 자동 전환하지 않습니다.</p></details>
+      </section>
+
+      <section class="settings-card" aria-labelledby="model-title"><div class="card-heading"><h3 id="model-title"><span class="step">2</span> 손 추적 모델</h3><span class="mini-label">Python 처리</span></div><p id="model-help" class="help">영상 수신과 추적 준비는 별도 상태입니다. 모델 오류가 나도 카메라 프리뷰는 유지됩니다.</p><button id="prepare-model" type="button" class="button full">추적 모델 준비</button></section>
+
+      <section class="settings-card" aria-labelledby="hand-title"><div class="card-heading"><h3 id="hand-title"><span class="step">3</span> 사용할 손과 손가락</h3></div>
+        <fieldset id="hand-fieldset"><legend>신체 기준의 손 선택</legend><div class="segmented"><label><input type="radio" name="selected-hand" value="right" checked><span>오른손</span></label><label><input type="radio" name="selected-hand" value="left"><span>왼손</span></label></div></fieldset>
+        <fieldset id="finger-fieldset"><legend>활성 손가락 <span class="optional">여러 개 선택 가능</span></legend><div class="finger-options"><label><input type="checkbox" name="active-finger" value="thumb"><span>엄지</span></label><label><input type="checkbox" name="active-finger" value="index" checked><span>검지</span></label><label><input type="checkbox" name="active-finger" value="middle"><span>중지</span></label><label><input type="checkbox" name="active-finger" value="ring"><span>약지</span></label><label><input type="checkbox" name="active-finger" value="pinky"><span>소지</span></label></div></fieldset>
+        <p class="help">손·손가락 선택을 바꾸면 이전 세션을 닫고 새 세션에서 보정합니다. 이전 안내와 보정 결과도 초기화됩니다.</p>
+      </section>
+
+      <section class="settings-card" aria-labelledby="geometry-title"><div class="card-heading"><h3 id="geometry-title"><span class="step">4</span> 가상 건반 배치</h3><span id="geometry-status" class="mini-label">연결 후 적용</span></div><p class="help">영상은 비율을 유지해 전체 표시합니다. 건반 가이드는 화면상의 영역이며 실제 책상과의 정합을 뜻하지 않습니다.</p>
+        <div class="geometry-controls"><label for="key-left">왼쪽 <output id="key-left-value">10%</output></label><input id="key-left" type="range" min="0" max="80" value="10"><label for="key-top">위쪽 <output id="key-top-value">67%</output></label><input id="key-top" type="range" min="0" max="90" value="67"><label for="key-width">너비 <output id="key-width-value">80%</output></label><input id="key-width" type="range" min="20" max="100" value="80"><label for="key-height">높이 <output id="key-height-value">22%</output></label><input id="key-height" type="range" min="10" max="50" value="22"></div><button id="retry-geometry" class="button full" type="button" style="margin-top:12px">화면 배치 다시 적용</button>
+      </section>
+
+      <section class="settings-card calibration-card" aria-labelledby="capture-title"><div class="card-heading"><h3 id="capture-title"><span class="step">5</span> 자세 보정</h3><span id="baseline-status" class="mini-label">기준 없음</span></div>
+        <p class="help">손을 자연스럽게 둔 기준 자세를 먼저 저장하세요. 들림 수집에서는 해당 손가락만 편안하게 들고 유지합니다.</p><button id="capture-rest" type="button" class="button full">기준 자세 수집</button><p class="help caution">기준을 다시 저장하면 이 기준을 공유하는 모든 들림 보정이 무효화됩니다.</p>
+        <div id="finger-calibrations" class="finger-calibrations"></div>
+        <div class="capture-panel" aria-live="polite"><div class="capture-heading"><strong id="capture-stage">수집 대기</strong><button id="cancel-capture" type="button" class="text-button" disabled>수집 취소</button></div><p id="capture-instruction">준비 1초 · 수집 3초 · 표본 부족 시 최대 5초</p><progress id="capture-progress" max="100" value="0" aria-label="서버 수집 진행률"></progress><div class="capture-metrics"><span>유효 <strong id="accepted-count">0</strong> / 입력 <strong id="input-count">0</strong></span><span id="capture-remaining">서버 판정 대기</span></div><p id="capture-result" class="capture-result">성공·실패는 Python의 품질 검사 결과로 결정됩니다.</p></div>
+      </section>
+
+      <section class="settings-card ready-card" aria-labelledby="ready-title"><div class="card-heading"><h3 id="ready-title"><span class="step">6</span> 입력 준비 확인</h3></div><p class="help">보정 완료 후 손을 기준 자세로 돌려놓으세요. 아래 버튼으로 연습곡 참조와 최신 유효 자세를 서버에서 확인합니다.</p><div class="reference-line"><span>연습곡 참조</span><code>builtin-ceg.v1</code></div><button id="ready-button" type="button" class="button primary full">기준 자세 · 입력 준비 확인</button><button id="export-button" type="button" class="button full">보정 기록 JSON 저장</button><p class="help">준비 확인 후 개인 보정과 수집 진단을 기록으로 저장할 수 있습니다.</p></section>
+
+      <section class="settings-card input-card" aria-labelledby="input-title"><div class="card-heading"><h3 id="input-title"><span class="step">7</span> 입력 점검 (B-02)</h3><span id="input-status" class="mini-label">대기</span></div>
+        <p class="help">입력 준비가 확인되면 시작하세요. 손가락을 들었다 내린 위치의 가상 건반이 반응합니다. 점검 결과는 연습 점수에 반영하지 않으며, 실제 책상 접촉을 확인한 것이 아닙니다.</p>
+        <div class="button-row"><button id="input-start" type="button" class="button primary">입력 점검 시작</button><button id="input-stop" type="button" class="button danger-quiet" disabled>입력 점검 종료</button></div>
+        <dl class="diagnostic-grid"><div><dt>후보</dt><dd id="input-candidates">0</dd></div><div><dt>건반 입력</dt><dd id="input-accepted">0</dd></div><div><dt>보류</dt><dd id="input-withheld">0</dd></div><div><dt>게시 대기</dt><dd id="input-pending">0</dd></div></dl>
+        <p id="input-last" class="quality-status" aria-live="polite">최근 입력 없음</p><p id="input-fingers" class="help">손가락 상태 대기</p></section>
+
+      <section class="settings-card diagnostics-card" aria-labelledby="diagnostics-title"><div class="card-heading"><h3 id="diagnostics-title">진단</h3><span class="mini-label">관측 · 상태 · 버전</span></div><dl class="diagnostic-grid"><div><dt>새 프레임</dt><dd id="metric-frames">0</dd></div><div><dt>서버 처리</dt><dd id="metric-processed">0</dd></div><div><dt>최신 대기 교체</dt><dd id="metric-skipped">0</dd></div><div><dt>왕복 시간</dt><dd id="metric-latency">—</dd></div></dl><p id="quality-status" class="quality-status">선택 손 관측 대기</p><details id="diagnostic-details"><summary>상세 상태와 실패 사유</summary><pre id="diagnostic-json" tabindex="0">{}</pre></details></section>
+      <footer class="settings-footer">B01·B02 · camera_pose · b01-policy.v1 · b02-policy.v1<br>영상·추론·보정·준비·입력 상태를 구분합니다. 가상 입력은 실제 접촉 확인이 아닙니다.</footer>
+    </aside>
+  </main>
+</body>
+</html>
