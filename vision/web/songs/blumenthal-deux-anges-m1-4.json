@@ -1,0 +1,180 @@
+{
+  "schema": "pthoven-song-chart.v1",
+  "id": "blumenthal-deux-anges-m1-4",
+  "level": 2,
+  "title_ko": "블루멘탈 「두 천사」 첫 프레이즈",
+  "title": "Les Deux Anges",
+  "composer": "J. Blumenthal (1829–1908)",
+  "license": "Public Domain",
+  "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=611",
+  "attribution": "Les Deux Anges — J. Blumenthal (1829–1908) · Mutopia (https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=611) · Public Domain · 프토벤 연습용으로 발췌·이조·단선율화",
+  "excerpt": {
+    "source_measures": [
+      1,
+      5
+    ],
+    "transpose_semitones": -7,
+    "tracks": [
+      1
+    ],
+    "melody_policy": "highest",
+    "end_quarter": 16.0,
+    "excluded_after_end_note_ids": [
+      "t1_n44"
+    ]
+  },
+  "derived_from": {
+    "dataset": "Mutopia",
+    "midi_sha256": "c5c02e67141bcc5e79f794e0b1a038c08ea9c95e46aecd8425df7003e8530ab9",
+    "preprocessor_version": "1.0.0",
+    "practice_version_id": "2d75b1b62c93"
+  },
+  "time_signature": [
+    4,
+    4
+  ],
+  "default_quarter_bpm": 60.0,
+  "duration_quarter": 16.0,
+  "keys": [
+    "C4",
+    "D4",
+    "E4",
+    "F4",
+    "G4"
+  ],
+  "min_onset_gap_quarter": 1.0,
+  "notes": [
+    {
+      "id": "n001",
+      "source_note_id": "t1_n2",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 0.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n002",
+      "source_note_id": "t1_n5",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 1.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n003",
+      "source_note_id": "t1_n8",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 2.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n004",
+      "source_note_id": "t1_n11",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 3.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n005",
+      "source_note_id": "t1_n14",
+      "midi": 67,
+      "key": "G4",
+      "onset_quarter": 4.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n006",
+      "source_note_id": "t1_n17",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 5.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n007",
+      "source_note_id": "t1_n20",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 6.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n008",
+      "source_note_id": "t1_n23",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 8.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n009",
+      "source_note_id": "t1_n26",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 9.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n010",
+      "source_note_id": "t1_n29",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 10.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n011",
+      "source_note_id": "t1_n32",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 11.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n012",
+      "source_note_id": "t1_n35",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 12.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n013",
+      "source_note_id": "t1_n38",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 13.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0005"
+    },
+    {
+      "id": "n014",
+      "source_note_id": "t1_n41",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 14.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0005"
+    }
+  ],
+  "evaluation_policy": {
+    "assess_onsets": true,
+    "assess_duration": false,
+    "assess_velocity": false,
+    "observations_must_not_be_snapped_to_reference": true
+  }
+}

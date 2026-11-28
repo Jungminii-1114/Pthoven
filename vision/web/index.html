@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>B01·B02 · 보정과 가상 입력</title>
+  <title>B01·B02 · 보정과 가상 입력 · 연습곡 가이드</title>
   <link rel="stylesheet" href="./style.css">
+  <script src="./practice.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -27,6 +28,7 @@
           </div>
           <div id="preview-placeholder" class="preview-placeholder"><span class="camera-glyph" aria-hidden="true">▣</span><strong>카메라를 연결해 주세요</strong><span>오른쪽에서 사용할 장치를 직접 선택합니다.</span></div>
           <div id="keyboard-guide" class="keyboard-guide" aria-label="화면 위 가상 건반 배치 가이드"><span>C4</span><span>D4</span><span>E4</span><span>F4</span><span>G4</span><span>A4</span><span>B4</span><span>C5</span></div>
+          <canvas id="practice-overlay" class="practice-overlay" aria-label="연습곡 낙하 가이드"></canvas>
           <span class="preview-caption">가상 건반 배치 가이드</span>
         </div>
         <div class="preview-toolbar"><div class="legend"><i></i> 선택 손 <i class="other"></i> 다른 손</div><div class="flip-buttons"><button id="flip-x" type="button" class="button compact" aria-pressed="false">↔ 좌우 반전 <span>꺼짐</span></button><button id="flip-y" type="button" class="button compact" aria-pressed="false">↕ 상하 반전 <span>꺼짐</span></button></div></div>
@@ -78,8 +80,17 @@
         <dl class="diagnostic-grid"><div><dt>후보</dt><dd id="input-candidates">0</dd></div><div><dt>건반 입력</dt><dd id="input-accepted">0</dd></div><div><dt>보류</dt><dd id="input-withheld">0</dd></div><div><dt>게시 대기</dt><dd id="input-pending">0</dd></div></dl>
         <p id="input-last" class="quality-status" aria-live="polite">최근 입력 없음</p><p id="input-fingers" class="help">손가락 상태 대기</p></section>
 
+      <section class="settings-card practice-card" aria-labelledby="practice-title"><div class="card-heading"><h3 id="practice-title"><span class="step">8</span> 연습곡 가이드</h3><span id="practice-status" class="mini-label">곡 선택</span></div>
+        <p class="help">고른 곡의 음이 가상 건반 위로 내려옵니다. 타일 아랫변이 건반 윗변에 닿을 때 해당 건반 위에서 손가락을 들었다 내리세요. 지금은 <strong>표시 전용</strong>이며 맞음·틀림 판정은 하지 않습니다(B-03 예정).</p>
+        <label for="practice-song">연습곡</label><select id="practice-song"><option value="">곡 목록 불러오는 중</option></select>
+        <label for="practice-bpm" style="margin-top:10px">템포 (4분음표 BPM)</label><select id="practice-bpm"><option value="50">50 · 느리게</option><option value="60">60 · 조금 느리게</option><option value="66" selected>66 · 보통</option><option value="72">72 · 조금 빠르게</option></select>
+        <div class="button-row" style="margin-top:12px"><button id="practice-start" type="button" class="button primary">가이드 시작</button><button id="practice-stop" type="button" class="button danger-quiet" disabled>가이드 정지</button></div>
+        <p id="practice-progress" class="quality-status" aria-live="polite">곡을 고르고 시작하세요.</p>
+        <button id="practice-export" type="button" class="button full" disabled>가이드 기록 JSON 저장</button>
+        <p id="practice-credit" class="help practice-credit">출처 표시 대기</p></section>
+
       <section class="settings-card diagnostics-card" aria-labelledby="diagnostics-title"><div class="card-heading"><h3 id="diagnostics-title">진단</h3><span class="mini-label">관측 · 상태 · 버전</span></div><dl class="diagnostic-grid"><div><dt>새 프레임</dt><dd id="metric-frames">0</dd></div><div><dt>서버 처리</dt><dd id="metric-processed">0</dd></div><div><dt>최신 대기 교체</dt><dd id="metric-skipped">0</dd></div><div><dt>왕복 시간</dt><dd id="metric-latency">—</dd></div></dl><p id="quality-status" class="quality-status">선택 손 관측 대기</p><details id="diagnostic-details"><summary>상세 상태와 실패 사유</summary><pre id="diagnostic-json" tabindex="0">{}</pre></details></section>
-      <footer class="settings-footer">B01·B02 · camera_pose · b01-policy.v1 · b02-policy.v1<br>영상·추론·보정·준비·입력 상태를 구분합니다. 가상 입력은 실제 접촉 확인이 아닙니다.</footer>
+      <footer class="settings-footer">B01·B02 · camera_pose · b01-policy.v1 · b02-policy.v1 · 연습곡 가이드 pthoven-song-chart.v1<br>영상·추론·보정·준비·입력 상태를 구분합니다. 가상 입력은 실제 접촉 확인이 아닙니다.</footer>
     </aside>
   </main>
 </body>

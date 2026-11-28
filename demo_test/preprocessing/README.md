@@ -101,6 +101,16 @@ python preprocessing/preprocess_nasap.py \
 
 프로세스 종료 코드는 0=변환 성공 및 처리 오류 없음, 1=부분 성공·일부 처리 오류, 2=변환한 곡 없음이다. catalog의 readiness는 별도로 확인한다. 같은 출력 폴더에서 재실행하면 catalog는 이번 실행 결과로 갱신된다. 곡 파일 이름에는 출처와 변환 설정의 버전 ID가 포함되며, 이전 실행의 곡 파일이 자동 삭제되지는 않는다.
 
+## 4-1. 화면 가이드용 곡 차트
+
+`ready=true`인 단음 연습 버전은 [export_song_chart.py](export_song_chart.py)로 vision 웹의 낙하 가이드 차트(`pthoven-song-chart.v1`)로 바꾼다. 음높이·시각은 그대로 옮기고 건반 이름·출처 표기만 붙인다. 흰 건반 C4~C5 밖의 음·동시음·ready=false는 거부한다. 데모 3곡의 선정 기준과 재생성 명령은 [vision/docs/2026-11-28-practice-guide.md](../../vision/docs/2026-11-28-practice-guide.md)에 있다.
+
+```bash
+python preprocessing/export_song_chart.py --practice outputs/mutopia/<곡>.json \
+  --id <곡 ID> --level 1 --title-ko "<화면 제목>" --output-dir ../vision/web/songs
+python -m unittest preprocessing.tests.test_song_chart -v   # mido 없이 실행
+```
+
 ## 5. 검증
 
 두 데이터셋의 의존성을 설치한 환경에서:

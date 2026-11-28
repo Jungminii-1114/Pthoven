@@ -1,0 +1,304 @@
+{
+  "schema": "pthoven-song-chart.v1",
+  "id": "schumann-op68-03-m1-8",
+  "level": 3,
+  "title_ko": "슈만 「콧노래」 Op.68-3 첫 8마디",
+  "title": "Album pour la jeunesse - 3.Chanson fredonnée",
+  "composer": "R. Schumann (1810–1856)",
+  "license": "Creative Commons Attribution-ShareAlike 3.0",
+  "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=651",
+  "attribution": "Album pour la jeunesse - 3.Chanson fredonnée — R. Schumann (1810–1856) · Mutopia (https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=651) · Creative Commons Attribution-ShareAlike 3.0 · 프토벤 연습용으로 발췌·이조·단선율화",
+  "excerpt": {
+    "source_measures": [
+      1,
+      8
+    ],
+    "transpose_semitones": -12,
+    "tracks": [
+      1
+    ],
+    "melody_policy": "highest",
+    "end_quarter": null,
+    "excluded_after_end_note_ids": []
+  },
+  "derived_from": {
+    "dataset": "Mutopia",
+    "midi_sha256": "9d8872ff88f556e4426b1c304947e8eb396807d06d593bc3e9a5e29c364c1462",
+    "preprocessor_version": "1.0.0",
+    "practice_version_id": "4e59384dd476"
+  },
+  "time_signature": [
+    4,
+    4
+  ],
+  "default_quarter_bpm": 60.0,
+  "duration_quarter": 31.0,
+  "keys": [
+    "C4",
+    "D4",
+    "E4",
+    "F4",
+    "G4"
+  ],
+  "min_onset_gap_quarter": 1.0,
+  "notes": [
+    {
+      "id": "n001",
+      "source_note_id": "t1_n0",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 0.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n002",
+      "source_note_id": "t1_n1",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 1.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n003",
+      "source_note_id": "t1_n2",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 2.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n004",
+      "source_note_id": "t1_n3",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 3.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n005",
+      "source_note_id": "t1_n4",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 4.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n006",
+      "source_note_id": "t1_n5",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 5.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n007",
+      "source_note_id": "t1_n6",
+      "midi": 67,
+      "key": "G4",
+      "onset_quarter": 6.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n008",
+      "source_note_id": "t1_n7",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 8.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n009",
+      "source_note_id": "t1_n8",
+      "midi": 67,
+      "key": "G4",
+      "onset_quarter": 9.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n010",
+      "source_note_id": "t1_n9",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 10.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n011",
+      "source_note_id": "t1_n10",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 11.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n012",
+      "source_note_id": "t1_n11",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 12.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n013",
+      "source_note_id": "t1_n12",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 13.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n014",
+      "source_note_id": "t1_n13",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 14.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n015",
+      "source_note_id": "t1_n14",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 15.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n016",
+      "source_note_id": "t1_n15",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 16.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0005"
+    },
+    {
+      "id": "n017",
+      "source_note_id": "t1_n16",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 17.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0005"
+    },
+    {
+      "id": "n018",
+      "source_note_id": "t1_n17",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 18.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0005"
+    },
+    {
+      "id": "n019",
+      "source_note_id": "t1_n18",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 19.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0005"
+    },
+    {
+      "id": "n020",
+      "source_note_id": "t1_n19",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 20.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0006"
+    },
+    {
+      "id": "n021",
+      "source_note_id": "t1_n20",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 21.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0006"
+    },
+    {
+      "id": "n022",
+      "source_note_id": "t1_n21",
+      "midi": 67,
+      "key": "G4",
+      "onset_quarter": 22.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0006"
+    },
+    {
+      "id": "n023",
+      "source_note_id": "t1_n22",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 24.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0007"
+    },
+    {
+      "id": "n024",
+      "source_note_id": "t1_n23",
+      "midi": 67,
+      "key": "G4",
+      "onset_quarter": 25.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0007"
+    },
+    {
+      "id": "n025",
+      "source_note_id": "t1_n24",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 26.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0007"
+    },
+    {
+      "id": "n026",
+      "source_note_id": "t1_n25",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 27.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0007"
+    },
+    {
+      "id": "n027",
+      "source_note_id": "t1_n26",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 28.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0008"
+    },
+    {
+      "id": "n028",
+      "source_note_id": "t1_n27",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 30.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0008"
+    }
+  ],
+  "evaluation_policy": {
+    "assess_onsets": true,
+    "assess_duration": false,
+    "assess_velocity": false,
+    "observations_must_not_be_snapped_to_reference": true
+  }
+}
