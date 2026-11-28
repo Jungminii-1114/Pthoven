@@ -1,0 +1,141 @@
+{
+  "schema": "pthoven-song-chart.v1",
+  "id": "pleyel-rondo-m1-4",
+  "level": 1,
+  "title_ko": "플레옐 「론도」 첫 4마디",
+  "title": "Rondo",
+  "composer": "I. J. Pleyel (1757–1831)",
+  "license": "Public Domain",
+  "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=191",
+  "attribution": "Rondo — I. J. Pleyel (1757–1831) · Mutopia (https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=191) · Public Domain · 프토벤 연습용으로 발췌·이조·단선율화",
+  "excerpt": {
+    "source_measures": [
+      1,
+      4
+    ],
+    "transpose_semitones": -7,
+    "tracks": [
+      1
+    ],
+    "melody_policy": "highest",
+    "end_quarter": null,
+    "excluded_after_end_note_ids": []
+  },
+  "derived_from": {
+    "dataset": "Mutopia",
+    "midi_sha256": "7b88dc5ba74e9a11101843ef0c60b862b86bdb9c18f6bf7821d46b1ecd61d4e7",
+    "preprocessor_version": "1.0.0",
+    "practice_version_id": "9e33fd3f8116"
+  },
+  "time_signature": [
+    3,
+    4
+  ],
+  "default_quarter_bpm": 60.0,
+  "duration_quarter": 12.0,
+  "keys": [
+    "C4",
+    "D4",
+    "E4",
+    "F4"
+  ],
+  "min_onset_gap_quarter": 1.0,
+  "notes": [
+    {
+      "id": "n001",
+      "source_note_id": "t1_n1",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 0.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n002",
+      "source_note_id": "t1_n3",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 1.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n003",
+      "source_note_id": "t1_n4",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 2.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0001"
+    },
+    {
+      "id": "n004",
+      "source_note_id": "t1_n7",
+      "midi": 65,
+      "key": "F4",
+      "onset_quarter": 3.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n005",
+      "source_note_id": "t1_n9",
+      "midi": 64,
+      "key": "E4",
+      "onset_quarter": 5.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0002"
+    },
+    {
+      "id": "n006",
+      "source_note_id": "t1_n11",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 6.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n007",
+      "source_note_id": "t1_n13",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 7.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n008",
+      "source_note_id": "t1_n14",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 8.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0003"
+    },
+    {
+      "id": "n009",
+      "source_note_id": "t1_n17",
+      "midi": 62,
+      "key": "D4",
+      "onset_quarter": 9.0,
+      "duration_quarter": 2.0,
+      "source_measure_id": "m0004"
+    },
+    {
+      "id": "n010",
+      "source_note_id": "t1_n19",
+      "midi": 60,
+      "key": "C4",
+      "onset_quarter": 11.0,
+      "duration_quarter": 1.0,
+      "source_measure_id": "m0004"
+    }
+  ],
+  "evaluation_policy": {
+    "assess_onsets": true,
+    "assess_duration": false,
+    "assess_velocity": false,
+    "observations_must_not_be_snapped_to_reference": true
+  }
+}

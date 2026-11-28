@@ -30,6 +30,8 @@
     inputSummary: null, lastInput: null, seenEvents: new Set(), audio: null, ackFailures: 0,
   };
   const KEY_ORDER = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+  // 연습곡 낙하 가이드(practice.js). 표시 전용이며 B-02 입력을 기대 음에 맞추거나 판정하지 않는다.
+  const practice = { guide: null, songs: [], charts: new Map(), loading: false };
   const FLAG_TEXT = { OUTSIDE_KEYBOARD: "건반 영역 밖", KEY_BOUNDARY: "건반 경계", COORDINATE_UNAVAILABLE: "후보 시점 좌표 없음", STALE_GEOMETRY: "기하 버전 변경" };
   let geometryTimer;
 
@@ -699,6 +701,7 @@
       state.seenEvents.add(proposal.event_id);
       const emitted = performance.now();
       const accepted = proposal.input_status === "accepted_provisional";
+      practice.guide?.noteInput({ ...proposal, emitted_ms: emitted });
       if (accepted) { flashKey(proposal.virtual_key, false); playNote(proposal.midi_note); } else flashKey(null, true);
       state.lastInput = { ...proposal, emitted_ms: emitted };
       if (!byDecision.has(proposal.decision_ref)) byDecision.set(proposal.decision_ref, []);
@@ -882,6 +885,76 @@
     if ($("diagnostic-details").open || force) $("diagnostic-json").textContent = JSON.stringify({ clock_id: clockId, session: state.session, device: { selected_device_id: state.deviceId, label: state.deviceLabel, permission: state.permission, stream: state.camera, tracker: state.tracker }, model: state.model, transport: { in_flight: Boolean(state.inFlight), queued: Boolean(state.latest), skipped: state.skipped, jpeg_max_width: 640, source_flipped: false }, capture: state.capture, quality: state.quality, diagnostics: state.diagnostics }, null, 2);
   }
 
+  function setupPractice() {
+    const lib = globalThis.PthovenPractice;
+    if (!lib) return;
+    practice.guide = lib.createGuide({ canvas: $("practice-overlay"), keyboard: $("keyboard-guide"), onChange: renderPractice });
+    void loadSongs();
+  }
+
+  async function loadSongs() {
+    try {
+      const response = await fetch("./songs/index.json", { cache: "no-store" });
+      if (!response.ok) throw new Error(`곡 목록 HTTP ${response.status}`);
+      practice.songs = (await response.json()).songs || [];
+      $("practice-song").replaceChildren(...practice.songs.map((song) => new Option(`Lv.${song.level} · ${song.title_ko} (${song.note_count}음)`, song.id)));
+      renderPractice();
+    } catch (error) {
+      $("practice-song").replaceChildren(new Option("곡 목록을 불러오지 못했습니다", ""));
+      $("practice-progress").textContent = `곡 목록 오류: ${error.message}`;
+    }
+  }
+
+  async function loadChart(id) {
+    if (practice.charts.has(id)) return practice.charts.get(id);
+    const song = practice.songs.find((item) => item.id === id);
+    if (!song) throw new Error("선택한 곡이 목록에 없습니다.");
+    const response = await fetch(`./songs/${encodeURIComponent(song.file)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`곡 차트 HTTP ${response.status}`);
+    const chart = globalThis.PthovenPractice.validateChart(await response.json());
+    practice.charts.set(id, chart);
+    return chart;
+  }
+
+  async function startPractice() {
+    if (!practice.guide || practice.loading) return;
+    practice.loading = true; renderPractice();
+    try {
+      const chart = await loadChart($("practice-song").value);
+      practice.guide.start(chart, Number($("practice-bpm").value));
+      const running = state.session?.lifecycle_phase === "running";
+      notice(running ? "가이드를 시작했습니다. 타일이 건반 윗변에 닿을 때 그 건반 위에서 손가락을 들었다 내리세요." : "가이드만 시작했습니다. 입력을 함께 기록하려면 7번 입력 점검을 먼저 시작하세요.", "good");
+    } catch (error) { failure(error, "가이드를 시작하지 못했습니다. "); }
+    finally { practice.loading = false; renderPractice(); }
+  }
+
+  function exportPractice() {
+    const data = practice.guide?.exportRun();
+    if (!data) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = `pthoven-guide-run-${data.song.id}.json`;
+    document.body.append(anchor); anchor.click(); anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function renderPractice(snap = practice.guide?.snapshot()) {
+    if (!snap) return;
+    const lib = globalThis.PthovenPractice, running = snap.state === "running";
+    const song = practice.songs.find((item) => item.id === $("practice-song").value);
+    $("practice-start").disabled = practice.loading || !song;
+    $("practice-start").textContent = running ? "처음부터 다시" : "가이드 시작";
+    $("practice-stop").disabled = !running;
+    $("practice-export").disabled = snap.state === "idle";
+    status("practice-status", { idle: "곡 선택", running: "재생 중", finished: "완주", stopped: "정지" }[snap.state] || snap.state, running ? "good" : "");
+    const keyName = (key) => key ? `${lib.SOLFEGE[key]}(${key})` : "—";
+    $("practice-progress").textContent = snap.state === "idle" ? "곡을 고르고 시작하세요."
+      : running ? (snap.countdown != null ? `준비 · ${snap.countdown}박 뒤 시작 · 첫 음 ${keyName(snap.next)}` : `진행 ${snap.passed}/${snap.total} · 다음 ${keyName(snap.next)} · 기록된 입력 ${snap.inputs}개`)
+      : `${snap.state === "finished" ? "완주" : "정지"} · 기대 음 ${snap.total}개 · 기록된 입력 ${snap.inputs}개 (판정 없음)`;
+    const chart = practice.charts.get(song?.id);
+    $("practice-credit").textContent = chart ? `출처: ${chart.attribution}` : song ? `출처: ${song.composer} · ${song.license} (시작하면 전체 표기)` : "출처 표시 대기";
+  }
+
   $("permission-button").addEventListener("click", () => void requestPermission());
   $("refresh-cameras").addEventListener("click", async () => { state.refreshBusy = true; render(); try { await enumerateCameras(); } catch (error) { failure(error); } finally { state.refreshBusy = false; render(); } });
   $("camera-select").addEventListener("change", () => { render(); if (state.stream && $("camera-select").value !== state.deviceId) notice("선택 장치 연결을 눌러야 카메라가 바뀝니다. 현재 영상은 프리뷰 위 장치의 영상입니다."); });
@@ -900,8 +973,14 @@
   $("input-start").addEventListener("click", () => void startInput());
   $("input-stop").addEventListener("click", () => void stopInput());
   $("diagnostic-details").addEventListener("toggle", () => render(true));
+  $("practice-song").addEventListener("change", () => renderPractice());
+  $("practice-start").addEventListener("click", () => void startPractice());
+  $("practice-stop").addEventListener("click", () => practice.guide?.stop());
+  $("practice-export").addEventListener("click", () => exportPractice());
   navigator.mediaDevices?.addEventListener("devicechange", () => { if (!capturing() && !state.connectionBusy) void enumerateCameras().catch((error) => failure(error)); });
-  new ResizeObserver(() => { drawLandmarks(); if (state.session && JSON.stringify(geometry()) !== state.geometrySignature) geometryChanged(); }).observe($("preview-stage"));
+  // 세션이 없을 때도 건반 가이드 표시는 화면 크기에 맞춘다. 첫 계산이 레이아웃 전(폭 0)에 일어나면
+  // 가이드가 폭 0으로 남아 연습곡 가이드가 보이지 않았다(2026-11-28). 서버 동기화는 세션이 있을 때만 한다.
+  new ResizeObserver(() => { drawLandmarks(); if (!state.session) updateGeometryUI(); else if (JSON.stringify(geometry()) !== state.geometrySignature) geometryChanged(); }).observe($("preview-stage"));
   window.addEventListener("pagehide", () => {
     const old = state.session || state.retiredSession;
     state.generation += 1; stopFrameLoop(); flushPending();
@@ -917,12 +996,13 @@
   setInterval(() => { void pollSession(); }, 1000);
   setInterval(() => {
     render();
+    if (practice.guide?.run?.state === "running") renderPractice();
     // 손·손가락 선택 변경으로 새 세션을 만든 직후, 동기화 타이머가 바쁜 상태에서 한 번 건너뛰면
     // 장치·기하가 영영 전송되지 않아 보정 버튼이 잠겼다(2026-11-25 실사용). 조건이 맞으면 다시 예약한다.
     if (state.session && state.stream && state.camera === "receiving" && !state.syncBlocked && !capturing()
         && !state.connectionBusy && !state.controlBusy && (state.geometryPending || state.deviceSignature !== deviceSignature())) scheduleSync();
   }, 200);
-  updateGeometryUI(); render(true);
+  updateGeometryUI(); render(true); setupPractice();
   void enumerateCameras().catch((error) => failure(error));
   void pollHealth();
 })();
