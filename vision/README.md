@@ -108,7 +108,7 @@ python3.10 -m venv .venv
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
 node --check web/app.js
-node --test tests/test_web.mjs tests/test_practice.mjs
+node --test tests/test_web.mjs tests/test_practice.mjs tests/test_practice_command.mjs
 ```
 
 수학/합성 테스트 통과, 빈 영상의 실제 모델 호출 성공, 실제 사람의 보정 성공률은 서로 다른 검증이다. 카메라·손가락별 현장 성능은 별도 테스트해야 한다.
@@ -116,11 +116,48 @@ node --test tests/test_web.mjs tests/test_practice.mjs
 ## PRD와 구현 범위
 
 - B01-01~12에 대응하는 세션·장치 상태·기하·수집·보정·취소·준비 결과를 구현한다. 브라우저 장치 선택/권한은 사용자 OS/브라우저가 수행한다.
-- S-02·S-04는 B-01과 B-02가 공유한다. B-02의 S-05·S-06·사건 게시 ACK는 `b02.py`와 `/start`·`/pause`·`/events/ack`로 구현했다. Agent는 구현 범위에 넣지 않는다.
+- S-02·S-04는 B-01과 B-02가 공유한다. B-02의 S-05·S-06·사건 게시 ACK는 `b02.py`와 `/start`·`/pause`·`/events/ack`로 구현했다. B-04·B-05의 코칭 진입점은 아래 별도 실행 계약을 사용한다.
 - 연결은 REST + JPEG HTTP 한 요청 처리 중/최신 대기 방식이다. PRD의 WebSocket 전송은 후속 범위이며, 의미 계약(proposal → 브라우저 emitted_ms → 최종 사건)은 REST로 동일하게 지킨다. B-03 소비자 연결은 아직 없고 최종 사건은 세션 기록(`input_runs[].virtual_inputs`)에 보존한다.
 - 세션의 연습곡 참조(`exercise_ref`)는 계약 시험용 `builtin-ceg.v1` 하나만 허용한다. 8번 카드의 연습곡 가이드(Mutopia 3곡)는 화면 표시용이며 아직 세션 참조·B-03 정렬과 연결하지 않았다([구현 기록](docs/2026-11-28-practice-guide.md)).
 - 세션당 수집 64개, 동시 보유 세션 32개 등 메모리 상한을 둔다. 서버 재시작은 메모리 세션을 지운다. 실제 사용자 운영용 영속 저장·원격 서버 인증은 후속 범위다.
 - 학습된 접촉 모델이 아니다. 모든 결과는 `contact_verified=false`다. root→TIP 거리를 뼈 길이로 취급하지 않고 공통 배율·구간 왜곡을 구분한다.
+
+## B-04·B-05 코칭과 명령 실행
+
+[B-04](../docs/plan/02-big-nodes/B-04.md), [B-05](../docs/plan/02-big-nodes/B-05.md), S-09~S-15와 [명령 계약](../docs/plan/05-contracts/command-protocol.md)의 실행 코드를 제공한다. 기존 Small Node 문서와 실행 순서를 유지하며, 모든 진입점은 `status`, `data`, `diagnostics`, `outcome`을 반환한다.
+
+| 계약 | 구현 |
+| --- | --- |
+| 업무 데이터·정책·계획·명령·ACK | `src/pthoven_vision/coaching_contracts.py` |
+| S-09 `route_coaching_trigger` | `src/pthoven_vision/coaching.py` |
+| S-10 `build_coach_context` | `src/pthoven_vision/coaching.py` |
+| S-11 `decide_practice_strategy` | `src/pthoven_vision/coaching.py` |
+| S-12 `validate_coach_plan` | `src/pthoven_vision/coaching.py` |
+| S-13 `issue_practice_command` | `src/pthoven_vision/practice_commands.py` |
+| S-14 `apply_command_and_ack` | `web/practice-command.js`의 `PthovenPracticeCommand.createClient()` 반환 객체 |
+| S-15 `reconcile_intervention` | `src/pthoven_vision/practice_commands.py` |
+| Big Node 실행 순서·수정·종료 | `run_b04`, `run_b05` |
+
+서버 Small Node는 `(request, context)`를 받는다. B-04의 `CoachRuntime`에 B-03 스냅샷, 현재 제어 상태 조회 함수, 세션 이력, 불변 근거, `ToolRegistry`, 모델 어댑터, `RunPolicy`, `ActionPolicy`를 전달한다. `run_b04(trigger, runtime)`은 S-09→S-10→S-11→S-12를 실행한다. 노드 사이의 선택은 하네스가 담당한다. S-11 안의 읽기·stage 도구 루프와 S-12 수정 재판단은 동일한 시간·토큰·호출 예산을 공유한다. 품질 보류 콜백은 모델 실행 전에 시스템의 평가 정지·epoch 갱신 경로를 실행해야 한다. epoch가 변경되면 새 스냅샷으로 다시 요청한다.
+
+모델 어댑터는 `adapter(payload, timeout_ms=..., max_tokens=..., profile=...)` 형식이다. 반환은 `{tokens_used, tool_calls}` 또는 `{tokens_used, plan}`이며 `tokens_used`는 입력·출력·추론을 합한 실제 사용량이다. `tool_calls` 항목은 `{tool_call_id, name, arguments}`다. 어댑터는 해당 런타임의 제한 시간과 전체 토큰 한도를 실제로 적용해야 한다. 특정 제공자·모델·운영 정책 수치는 기본값으로 선택하지 않는다. 읽기 도구는 등록된 스키마와 세션 범위 안에서 `NodeResult[Evidence]`를 반환하고, stage 도구는 `ActionProposal`만 저장한다. 읽기 결과와 근거 문자열은 모델 지시로 취급하지 않는다.
+
+B-05에는 파일 경로로 생성한 `CommandJournal`과 `CommandContext`를 전달한다. `run_b05(validated_plan, context)`는 변경이 있는 경우에만 명령을 발행한다. `publish`는 전송 함수, `probe`는 명령별 실제 상태의 읽기 전용 조회 함수다. queued 기록은 SQLite에 먼저 저장한다. 서버 재시작 후 `pending_tickets()`로 복구하고, 원래 ID를 유지한 `publish_command_ticket()` 재전송 또는 `reconcile_intervention()` 조회로 진행한다. journal은 한 coordinator 프로세스가 소유하며 스레드는 잠금으로 직렬화한다. 코디네이터 시계는 S-12·S-13에서 동일하게 사용해야 한다. 서버 부팅으로 단조 시계 자체가 바뀌었다면 이전 유효 시간을 재사용해 전송하지 말고 상태 조회부터 수행한다.
+
+브라우저의 `createClient({state, policy, now, applyAtomic, save, restored})`에는 실제 게임 상태와 동기식 전체 적용 함수, 명령·ACK 보관 함수를 연결한다. `apply_command_and_ack(ticket, {clock_id, expires_at_ms, boundary, effective_attempt_ref})`를 호출하면 경계 전에는 대기하고 경계에서 전체를 검사·적용한다. `expires_at_ms`는 전송 계층이 시계 오프셋과 전달 지연의 불확실성을 반영해 **브라우저 시계로 변환한 만료 시각**이어야 한다. 서버 단조 시각을 브라우저 시각과 직접 비교하거나 수신할 때마다 유효 시간을 늘리면 안 된다. `applyAtomic`은 템포·범위·힌트·단계 전체를 한 번에 반영해야 한다. 중단되어 적용 여부를 모르면 `application_unknown`을 유지한다. 사용자 수동 제어·즉시 품질 보류는 `manualChange()`로 epoch를 갱신한다. 품질 보류 때 평가 타이머와 누락 계산을 멈추는 것은 기존 시스템 경로의 책임이다.
+
+ACK와 상태 조회 결과는 `reconcile_intervention({command_id, observation}, context)`에 전달한다. ACK가 없으면 `observation=null`로 조회를 시작한다. 확인된 기록의 실제 설정·버전·시각·다음 시도 참조는 journal에 보존하고 현재 제어 상태에 반영한다. 별도 상태 저장소가 있으면 `persist_actual_state`를 연결한다. `journal.effective_config(session_id, attempt_id)`는 실제 적용이 확인된 시도의 조건만 반환한다. 늦은 ACK는 원래 명령·시계와 대조하며 이후 수동 제어를 덮어쓰지 않는다.
+
+현재 B-01·B-02 웹 데모에는 B-03 스냅샷 생성, 실제 텍스트 모델·읽기 도구, 코칭 명령 전송, 게임의 `applyAtomic` 연결이 없다. 이 입력을 임의의 값이나 합성 평가로 채우지 않는다. 따라서 기존 데모에서 코칭이 자동 실행되지는 않는다. 서버→클라이언트→서버 계약 경로는 실제 Python 명령과 JavaScript ACK를 교환하는 합성 통합 테스트로 검증한다.
+
+```powershell
+# 저장소 루트에서 실행. Python pydantic 의존성이 설치된 환경을 사용한다.
+$env:PYTHONPATH = 'vision/src'
+python -m unittest discover -s vision/tests -p test_coaching.py -v
+node --test vision/tests/test_practice_command.mjs
+```
+
+테스트는 사건 중복, 정보 부족, 허용 도구, 모델 장애·공통 예산, 근거 값·단위, 제안 충돌, 수동 제어, 명령 중복, 전송 실패·서버 복구, 원자 적용, 클라이언트 중단, ACK 유실·지연·충돌과 다음 시도 조건 연결을 확인한다. 문장의 교육적 타당성·실제 모델 품질은 [하네스 평가 계획](../docs/plan/06-harness-and-evaluation.md)에 따른 별도 평가 대상이다.
 
 ## 모델 준비 오류
 

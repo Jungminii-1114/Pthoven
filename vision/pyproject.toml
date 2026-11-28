@@ -19,4 +19,4 @@ pthoven-b01 = "pthoven_vision.api:main"
 where = ["src"]
 
 [tool.setuptools.data-files]
-"share/pthoven-vision/web" = ["web/index.html", "web/style.css", "web/app.js"]
+"share/pthoven-vision/web" = ["web/index.html", "web/style.css", "web/app.js", "web/practice.js", "web/practice-command.js"]
